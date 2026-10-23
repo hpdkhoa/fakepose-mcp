@@ -109,6 +109,46 @@ class FakePose:
             out[name] = best
         return out
 
+    # --- the body and the eye (the owner, 2026-10-23: "use 1, for fakepose-mcp only") ------------------------------
+    BODY_BONES = ("pelvis", "spine_01", "spine_02", "spine_03", "spine_04", "spine_05", "neck_01", "neck_02", "head",
+                  "clavicle_l", "clavicle_r")
+    # Epic's first-person template (Unreal Engine 5.6, FirstPersonCharacter): the camera on the "head" bone at
+    # (-2.8, 5.89, 0) cm, 5.89 ahead of the head joint and 2.8 below it
+    EYE_FROM_HEAD_CM = {"forward": 5.89, "up": -2.8, "source": "Unreal Engine 5.6 First Person template: "
+                        "FirstPersonCameraComponent attached to the mesh's head bone at FVector(-2.8, 5.89, 0)"}
+
+    def body_rest(self):
+        """The body (pelvis, spine, neck, head, collarbones) at the rig's rest pose: an anatomical body, the shoulders
+        below the eye. The first-person template's idle lifts the right shoulder 30 cm, to above the head, so arms at
+        aim crossed the view."""
+        L = self.L
+        done = []
+        for n in self.BODY_BONES:
+            pb = L.arm.pose.bones.get(n)
+            if pb is not None:
+                pb.matrix_basis.identity()
+                done.append(n)
+        bpy.context.view_layer.update()
+        self.report["body_rest"] = done
+        return done
+
+    def set_eye(self):
+        """The eye measured from the rig's head bone (as posed now) with the template's camera offset; Gun Kit's eye
+        kept in the report for comparison."""
+        L, gk = self.L, self.gk
+        VR, VF, VU = (Vector(list(v)) for v in gk["view"])
+        hb = L.arm.pose.bones.get("head")
+        if hb is None:
+            self.report["eye"] = {"kept": [round(x, 4) for x in L.eye], "why": "the rig has no head bone"}
+            return L.eye
+        h = L.arm.matrix_world @ hb.head
+        old = L.eye.copy()
+        L.eye = h + VF * (self.EYE_FROM_HEAD_CM["forward"] / 100.0) + VU * (self.EYE_FROM_HEAD_CM["up"] / 100.0)
+        self.report["eye"] = {"head_bone": [round(x, 4) for x in h], "eye": [round(x, 4) for x in L.eye],
+                              "gun_kit_eye": [round(x, 4) for x in old], "moved_cm": round((L.eye - old).length * 100.0, 2),
+                              "source": self.EYE_FROM_HEAD_CM["source"]}
+        return L.eye
+
     # --- the aim place --------------------------------------------------------------------------------------------
     def aim_place(self, side="r", elbow_deg=5.0):
         """The gun at aim (the owner: "we start with the aim position first"): its sight line through the eye, the
