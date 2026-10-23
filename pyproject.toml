@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fakepose-mcp"
+version = "0.1.0"
+description = "An MCP server that poses first-person hands on a gun the way games do it: authored grip presets on the gun's sockets, fingers curled to contact, two-bone IK, and a check that the first-person camera sees no clipping."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Khoa Hoang" }]
+requires-python = ">=3.10"
+dependencies = ["mcp>=2.0,<3"]
+
+[project.scripts]
+fakepose-mcp = "fakepose_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fakepose_mcp"]

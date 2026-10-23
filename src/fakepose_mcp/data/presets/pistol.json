@@ -1,0 +1,229 @@
+{
+ "contract": "fakepose-presets/1",
+ "family": "pistol",
+ "note": "Authored holds, the way a game animator keeps grip poses: each on a mark (a socket) of the gun, in the gun's own axes (forward = the bore, up, left). The firing grip comes from the owner's approved experiment (captured/<gun>_r_grip.json); its fingers' rules are here.",
+ "holds": {
+  "r:grip:palm": {
+   "source": "captured: the owner's approved experiment (2026-10-23)",
+   "fingers": {
+    "index": {
+     "rule": "keep",
+     "why": "straight along line B, off the trigger (the experiment: 0.01 deg)"
+    },
+    "middle": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "why": "wraps the front strap until it touches"
+    },
+    "ring": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "why": "wraps the front strap until it touches"
+    },
+    "pinky": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "why": "wraps the front strap until it touches"
+    },
+    "thumb": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "why": "closes onto the frame's other side until it touches"
+    }
+   }
+  },
+  "l:support:palm": {
+   "source": "authored (fakepose 0.1, 2026-10-23) after FM 3-23.35 2-2, the two-hand grip: the support palm fills the grip's open (left) side over the firing fingers, its fingers wrapping the firing fingers forward and down, the thumb forward along the frame; placed 2 cm above the support mark, fingers forward and 31 deg down (the support index under the trigger guard)",
+   "contact": "palm_skin",
+   "palm_into": {
+    "left": -1.0
+   },
+   "fingers_toward": {
+    "forward": 1.0,
+    "up": -0.6
+   },
+   "push_out": true,
+   "fingers": {
+    "index": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": true
+    },
+    "middle": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": true
+    },
+    "ring": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": true
+    },
+    "pinky": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": true
+    },
+    "thumb": {
+     "rule": "keep",
+     "why": "thumbs forward, along the frame"
+    }
+   },
+   "offset_cm": {
+    "up": 2.0
+   }
+  },
+  "l:mag_grab": {
+   "source": "authored (fakepose 0.1, 2026-10-23): the magazine taken from below, the palm under its base, the fingers wrapping its front",
+   "contact": "palm_skin",
+   "palm_into": {
+    "up": 1.0
+   },
+   "fingers_toward": {
+    "forward": 1.0
+   },
+   "push_out": true,
+   "fingers": {
+    "index": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "middle": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "ring": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "pinky": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "thumb": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    }
+   }
+  },
+  "l:magazine": {
+   "source": "authored (fakepose 0.1, 2026-10-23): the magazine taken from below, the palm under its base, the fingers wrapping its front",
+   "contact": "palm_skin",
+   "palm_into": {
+    "up": 1.0
+   },
+   "fingers_toward": {
+    "forward": 1.0
+   },
+   "push_out": true,
+   "fingers": {
+    "index": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "middle": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "ring": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "pinky": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "thumb": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    }
+   }
+  },
+  "l:slide_rear": {
+   "source": "authored (fakepose 0.1, 2026-10-23): the overhand rack, the palm down on the slide's rear, the fingers across its right side, the thumb on its left",
+   "contact": "palm_skin",
+   "palm_into": {
+    "up": -1.0
+   },
+   "fingers_toward": {
+    "left": -1.0
+   },
+   "push_out": true,
+   "fingers": {
+    "index": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "middle": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "ring": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "pinky": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "thumb": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    }
+   }
+  },
+  "l:slide_front": {
+   "source": "authored (fakepose 0.1, 2026-10-23): the press check, thumb and index pinching the slide's front from above",
+   "contact": "pinch",
+   "palm_into": {
+    "up": -1.0
+   },
+   "fingers_toward": {
+    "left": -1.0
+   },
+   "push_out": true,
+   "fingers": {
+    "index": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "thumb": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "middle": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "ring": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "pinky": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    }
+   }
+  }
+ }
+}
