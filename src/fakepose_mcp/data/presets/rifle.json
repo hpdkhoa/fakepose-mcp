@@ -296,12 +296,13 @@
   }
  },
  "idle_pull": {
-  "back_cm": 6.0,
-  "down_cm": 9.0,
-  "pitch_deg": -8.0,
+  "back_cm": -4.0,
+  "down_cm": 14.0,
+  "right_cm": 6.0,
+  "pitch_deg": -10.0,
   "aim_clips": [
    "aim"
   ],
-  "source": "authored (fakepose 0.1, 2026-10-24): the owner's 'the idle position is just the aim position with a pull': the rifle off the cheek, 6 cm back, 9 cm down, the muzzle 8 deg down; the aim clip keeps the aim"
+  "source": "authored (fakepose 0.1, 2026-10-24): the owner's 'the idle position is just the aim position with a pull': a rifle's low ready, off the cheek: 14 cm down, 6 cm right, 4 cm forward, the muzzle 10 deg down; the aim clip keeps the aim"
  }
 }
