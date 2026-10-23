@@ -281,24 +281,29 @@ class FakePose:
         by the glove's thickness, then the arm by IK. Returns how far it moved (cm)."""
         L = self.L
         hn = L._n("hand", side)
-        oth = self._other_hand(side)
+        # set down onto the gun: the other hand's fingertips under the palm are the support grip itself (the
+        # eye's check decides whether any of that shows)
+        oth = None
         _b, _T, sidev, kind, _s = L._skin_static()
         sc = 1 if side == "r" else 2
         sel = np.nonzero((sidev == sc) & (kind == 2))[0]          # the palm's skin
+
+        log = []
 
         def gap():
             P = L._skin_arrays()[0]
             X = P[sel]
             D = np.asarray(L.sdf_query(X, want_normal=False)[0], dtype=float)
-            g_ = float(np.min(D))
-            if oth is not None:
-                g_ = min(g_, float(np.min(oth(X))))
-            return g_
+            gg = float(np.min(D))
+            go = float(np.min(oth(X))) if oth is not None else 99.0
+            log.append([round(moved, 2), round(gg, 3), round(go, 3), round(float(np.linalg.norm(np.array(list(L._bw(hn).translation)) - np.array(list(H0.translation)))) * 100, 2)])
+            return min(gg, go)
         H0 = L._bw(hn).copy()
         moved = 0.0
         while gap() < self.glove and moved < max_cm:
             moved += step_cm
             L._put_hand(side, Matrix.Translation(Vector(list(-into * moved / 100.0))) @ H0)
+        self.report.setdefault("push_log", {})[side] = log[::5] + log[-1:]
         return round(moved, 2)
 
     def anchor(self, side, name):
@@ -350,7 +355,9 @@ class FakePose:
                 if loc is None:
                     out[i] = 99.0
                     continue
-                out[i] = (d if float((Vector(list(x)) - loc).dot(nrm)) >= 0.0 else -d) * 100.0
+                # the nearest face's side says inside only near the skin (1 cm); further off, a point is outside
+                inside = d < 0.01 and float((Vector(list(x)) - loc).dot(nrm)) < 0.0
+                out[i] = (-d if inside else d) * 100.0
             return out
         return dist
 
