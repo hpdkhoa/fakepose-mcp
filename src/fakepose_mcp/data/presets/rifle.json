@@ -1,0 +1,307 @@
+{
+ "contract": "fakepose-presets/1",
+ "family": "rifle",
+ "note": "Authored holds for a rifle with a pistol grip (an AR), each on a mark of the gun, in the gun's axes (forward = the bore, up, left).",
+ "holds": {
+  "r:grip:palm": {
+   "source": "authored (fakepose 0.1, 2026-10-24): the firing hand on the pistol grip's right face, its fingers forward square to the grip's line and wrapping its front, the index straight along the lower above the trigger guard, the thumb over the left",
+   "contact": "palm_skin",
+   "palm_into": {
+    "left": 1.0
+   },
+   "fingers_toward": {
+    "forward": 0.94,
+    "up": -0.34
+   },
+   "push_out": true,
+   "fingers": {
+    "index": {
+     "rule": "keep"
+    },
+    "middle": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "ring": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "pinky": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "thumb": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    }
+   }
+  },
+  "l:support": {
+   "source": "authored (fakepose 0.1, 2026-10-24): the support hand under the handguard, the palm up, the fingers across to its right side, the thumb on its left",
+   "contact": "palm_skin",
+   "palm_into": {
+    "up": 1.0
+   },
+   "fingers_toward": {
+    "left": -1.0,
+    "forward": 0.4
+   },
+   "push_out": true,
+   "fingers": {
+    "index": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "middle": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "ring": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "pinky": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "thumb": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    }
+   }
+  },
+  "l:mag_grab": {
+   "source": "authored (fakepose 0.1, 2026-10-24): the magazine taken in the hand, the palm on its left face, the fingers round its front",
+   "contact": "palm_skin",
+   "palm_into": {
+    "left": -1.0
+   },
+   "fingers_toward": {
+    "forward": 1.0,
+    "up": -0.3
+   },
+   "push_out": true,
+   "fingers": {
+    "index": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "middle": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "ring": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "pinky": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "thumb": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    }
+   }
+  },
+  "l:catch": {
+   "source": "authored (fakepose 0.1, 2026-10-24): the palm slapping the bolt catch on the lower's left, the fingers flat and up",
+   "contact": "palm_skin",
+   "palm_into": {
+    "left": -1.0
+   },
+   "fingers_toward": {
+    "up": 1.0,
+    "forward": 0.3
+   },
+   "push_out": true,
+   "fingers": {}
+  },
+  "l:handle": {
+   "source": "authored (fakepose 0.1, 2026-10-24): the charging handle hooked from above, the hand over the receiver, index and thumb pinching the T",
+   "contact": "pinch",
+   "palm_into": {
+    "up": -1.0
+   },
+   "fingers_toward": {
+    "left": -1.0
+   },
+   "push_out": true,
+   "fingers": {
+    "index": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "middle": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "ring": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "pinky": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "thumb": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    }
+   }
+  },
+  "l:assist": {
+   "source": "authored (fakepose 0.1, 2026-10-24): the palm pushing the forward assist on the upper's right, the fingers up",
+   "contact": "palm_skin",
+   "palm_into": {
+    "left": 1.0
+   },
+   "fingers_toward": {
+    "up": 1.0
+   },
+   "push_out": true,
+   "fingers": {}
+  },
+  "l:magazine": {
+   "source": "authored (fakepose 0.1, 2026-10-24): the magazine taken in the hand, the palm on its left face, the fingers round its front",
+   "contact": "palm_skin",
+   "palm_into": {
+    "left": -1.0
+   },
+   "fingers_toward": {
+    "forward": 1.0,
+    "up": -0.3
+   },
+   "push_out": true,
+   "fingers": {
+    "index": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "middle": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "ring": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "pinky": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "thumb": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    }
+   }
+  },
+  "l:load_port": {
+   "source": "authored (fakepose 0.1, 2026-10-24): a shell pushed up into the loading port under the receiver: the palm up under the port, the thumb and the fingers closed on the shell",
+   "contact": "pinch",
+   "palm_into": {
+    "up": 1.0
+   },
+   "fingers_toward": {
+    "forward": 1.0
+   },
+   "push_out": true,
+   "fingers": {
+    "index": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "middle": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "ring": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "pinky": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "thumb": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    }
+   }
+  },
+  "l:release": {
+   "source": "authored (fakepose 0.1, 2026-10-24): the palm pressing the release button on the right side, the fingers flat and forward",
+   "contact": "palm_skin",
+   "palm_into": {
+    "left": 1.0
+   },
+   "fingers_toward": {
+    "forward": 1.0,
+    "up": 0.3
+   },
+   "push_out": true,
+   "fingers": {}
+  },
+  "l:port": {
+   "source": "authored (fakepose 0.1, 2026-10-24): the hand at the ejection port on the right side (dropping a shell in or feeling the chamber), the palm toward the port, the fingers forward",
+   "contact": "pinch",
+   "palm_into": {
+    "left": 1.0
+   },
+   "fingers_toward": {
+    "forward": 1.0
+   },
+   "push_out": true,
+   "fingers": {
+    "index": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "thumb": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    }
+   }
+  }
+ },
+ "idle_pull": {
+  "back_cm": 6.0,
+  "down_cm": 9.0,
+  "pitch_deg": -8.0,
+  "aim_clips": [
+   "aim"
+  ],
+  "source": "authored (fakepose 0.1, 2026-10-24): the owner's 'the idle position is just the aim position with a pull': the rifle off the cheek, 6 cm back, 9 cm down, the muzzle 8 deg down; the aim clip keeps the aim"
+ }
+}

@@ -60,6 +60,7 @@ class FakePose:
     # --- presets --------------------------------------------------------------------------------------------------
     def _load_presets(self):
         fam = "pistol" if "slide" in self.facts.get("parts", {}) else "rifle"
+        self.family = fam
         p = os.path.join(DATA, "presets", fam + ".json")
         out = json.load(open(p, encoding="utf-8")) if os.path.exists(p) else {"holds": {}}
         cap = os.path.join(DATA, "presets", "captured", "%s_r_grip.json" % self.facts["name"])
@@ -75,6 +76,49 @@ class FakePose:
                 return k, hs[k]
         return None, None
 
+    # --- the gun's surface, read straight off its meshes (no gun read needed: rifles and pistols alike) ----------
+    def gun_bvh(self):
+        """The gun's surface as posed now (every mesh that is not the arms), world, cached while nothing moves."""
+        L = self.L
+        obs = [o for o in bpy.context.scene.objects if o.type == "MESH" and o not in L.meshes and not o.hide_viewport
+               and o.vertex_groups.get("hand_r") is None]
+        dg = bpy.context.evaluated_depsgraph_get()
+        key = tuple(tuple(round(v, 6) for row in o.matrix_world for v in row) for o in obs)
+        key = key + tuple(tuple(round(v, 6) for v in pb.matrix.to_translation()) + tuple(round(v, 6) for v in pb.matrix.to_quaternion())
+                          for pb in getattr(L, "rifle_arm").pose.bones)
+        c = getattr(self, "_gbvh", None)
+        if c is not None and c[0] == key:
+            return c[1]
+        verts, tris = [], []
+        for o in obs:
+            ev = o.evaluated_get(dg)
+            me = ev.to_mesh()
+            M = ev.matrix_world
+            base = len(verts)
+            verts.extend([tuple(M @ v.co) for v in me.vertices])
+            me.calc_loop_triangles()
+            tris.extend([tuple(base + i for i in t.vertices) for t in me.loop_triangles])
+            ev.to_mesh_clear()
+        bvh = BVHTree.FromPolygons(verts, tris)
+        self._gbvh = (key, bvh)
+        self._gverts = np.array(verts)
+        return bvh
+
+    def gun_signed(self, X):
+        """Each point's distance to the gun's surface, cm, below 0 inside (the nearest face's side, trusted within
+        3 cm of the surface; further off a point counts as outside)."""
+        bvh = self.gun_bvh()
+        out = np.empty(len(X))
+        for i, x in enumerate(np.asarray(X, dtype=float)):
+            v = Vector((float(x[0]), float(x[1]), float(x[2])))
+            loc, nrm, _i, d = bvh.find_nearest(v)
+            if loc is None:
+                out[i] = 99.0
+                continue
+            inside = d < 0.03 and (v - loc).dot(nrm) < 0.0
+            out[i] = (-d if inside else d) * 100.0
+        return out
+
     # --- the gun's frame ------------------------------------------------------------------------------------------
     def gun_axes(self):
         """The gun's forward (the bore, toward the muzzle), up and left, world (facts: +y ahead, +z up, +x left)."""
@@ -89,10 +133,13 @@ class FakePose:
     def sights(self):
         """The sights' tops, measured on the gun: rays straight down the gun's middle plane onto its mesh, every 1 mm
         over the slide's rear 3 cm and front 3 cm; the highest hit of each (the rear and the front sight)."""
-        bvh = self.L._object_now()[0]
+        bvh = self.gun_bvh()
         F, U, _Lf = self.gun_axes()
         m = self.facts["marks"]
         out = {}
+        if "rear_sight" in m and "front_sight" in m:
+            # a rifle's sights are marks: the rear aperture's middle and the front post's tip
+            return {"rear": self.to_world(m["rear_sight"]), "front": self.to_world(m["front_sight"])}
         for name, y0, y1 in (("rear", m["slide_rear"][1], m["slide_rear"][1] + 3.0),
                              ("front", m["slide_front"][1] - 3.0, m["slide_front"][1])):
             best = None
@@ -116,6 +163,10 @@ class FakePose:
     # (-2.8, 5.89, 0) cm, 5.89 ahead of the head joint and 2.8 below it
     EYE_FROM_HEAD_CM = {"forward": 5.89, "up": -2.8, "source": "Unreal Engine 5.6 First Person template: "
                         "FirstPersonCameraComponent attached to the mesh's head bone at FVector(-2.8, 5.89, 0)"}
+
+    # a rifle's rear sight in front of the eye at the cheek weld: a guess (8 cm), near the "nose to the charging
+    # handle" cue; TC 3-22.9 prints no eye relief for iron sights
+    EYE_RELIEF_CM = 8.0
 
     def body_rest(self):
         """The body (pelvis, spine, neck, head, collarbones) at the rig's rest pose: an anatomical body, the shoulders
@@ -169,6 +220,25 @@ class FakePose:
             return D
         # the hand's wrist where the grip preset puts it, with the gun at a trial distance; then the distance solved
         self.gk["move_gun"](Matrix(place(0.5).tolist()))
+        if self.family == "rifle":
+            # a shouldered rifle at the cheek weld (TC 3-22.9, 2016, 6-4: "bring the rifle up to your head ... the bony
+            # portion of the cheek placed on the stock"): the rear sight EYE_RELIEF_CM in front of the eye along the
+            # view; the arms reach the gun where it is, the butt's place against the shoulder reported
+            s1 = self.sights()
+            dd = float((eye + VF * (self.EYE_RELIEF_CM / 100.0) - s1["rear"]) @ VF)
+            D2 = np.eye(4)
+            D2[:3, 3] = VF * dd
+            self.gk["move_gun"](Matrix(D2.tolist()))
+            s2 = self.sights()
+            out = {"eye_to_rear_sight_cm": round(float(np.linalg.norm(s2["rear"] - eye)) * 100.0, 2),
+                   "sight_line_off_the_eye_cm": round(float(np.linalg.norm(np.cross(s2["rear"] - eye, unit(s2["front"] - s2["rear"])))) * 100.0, 3),
+                   "bore_to_view_deg": round(math.degrees(math.acos(min(1.0, float(unit(s2["front"] - s2["rear"]) @ VF)))), 3),
+                   "rule": "the cheek weld: the rear sight %.0f cm in front of the eye" % self.EYE_RELIEF_CM}
+            self.gun_bvh()
+            Sh = np.array(list(L._bw(L._n("upperarm", side)).translation))
+            out["butt_ahead_of_shoulder_joint_cm"] = round((float(np.min(self._gverts @ VF)) - float(Sh @ VF)) * 100.0, 2)
+            self.report["aim"] = out
+            return out
         Hw = self.hand_on("r", "grip", "palm")[0]
         w0 = np.array(list(Hw.translation))
         S = np.array(list(L._bw(L._n("upperarm", side)).translation))
@@ -293,7 +363,7 @@ class FakePose:
         def gap():
             P = L._skin_arrays()[0]
             X = P[sel]
-            D = np.asarray(L.sdf_query(X, want_normal=False)[0], dtype=float)
+            D = self.gun_signed(X)
             gg = float(np.min(D))
             go = float(np.min(oth(X))) if oth is not None else 99.0
             log.append([round(moved, 2), round(gg, 3), round(go, 3), round(float(np.linalg.norm(np.array(list(L._bw(hn).translation)) - np.array(list(H0.translation)))) * 100, 2)])
@@ -329,7 +399,7 @@ class FakePose:
             if not len(idx):
                 out.append(99.0)
                 continue
-            D = np.asarray(L.sdf_query(P[idx], want_normal=False)[0], dtype=float) * 1.0
+            D = self.gun_signed(P[idx])
             gap = float(np.min(D))
             if other is not None:
                 gap = min(gap, float(np.min(other(P[idx]))))
@@ -480,7 +550,7 @@ class FakePose:
             keep = (kind > 0)
             tri = self._eye_tri = [tuple(int(i) for i in t) for t in T if keep[t[0]] and keep[t[1]] and keep[t[2]]]
         skin = BVHTree.FromPolygons(P.tolist(), tri)
-        gun = L._object_now()[0]
+        gun = self.gun_bvh()
         eye = L.eye
         t = math.tan(math.radians(H_FOV / 2.0))
         nx, ny = res
@@ -508,15 +578,17 @@ class FakePose:
                     loc, nrm, _i, dist = skin.find_nearest(q)
                     if loc is not None and (q - loc).dot(nrm) < 0.0 and dist > lim:
                         clip += 1
-                        where.append(("gun in skin", ix, iy, round(dist * 100.0, 2)))
+                        sd_ = {1: "r", 2: "l"}.get(int(sidev[tri[_i][0]]), "?") if _i is not None else "?"
+                        where.append(("gun in skin", ix, iy, round(dist * 100.0, 2), sd_))
                 else:
                     seen_skin += 1
                     q = hs[0]
-                    D = float(np.asarray(L.sdf_query(np.array([list(q)]), want_normal=False)[0])[0])
+                    D = float(self.gun_signed([list(q)])[0])
                     if D < -self.glove:
                         clip += 1
-                        where.append(("skin in gun", ix, iy, round(-D, 2)))
-        return {"clip_pixels": clip, "pixels": nx * ny, "gun_pixels": seen_gun, "skin_pixels": seen_skin,
+                        sd_ = {1: "r", 2: "l"}.get(int(sidev[tri[hs[2]][0]]), "?") if hs[2] is not None else "?"
+                        where.append(("skin in gun", ix, iy, round(-D, 2), sd_))
+        return {"clip_pixels": clip, "pixels": nx * ny, "sides": sorted(set(w[4] for w in where if w[4] in ("r", "l"))), "gun_pixels": seen_gun, "skin_pixels": seen_skin,
                 "deepest_seen_cm": max((w[3] for w in where), default=0.0), "where": where[:40],
                 "rule": "the owner's choice (b), 2026-10-23: zero clipping seen from the first-person camera"}
 
@@ -564,6 +636,22 @@ class FakePose:
         return {"pixels": nx * ny, "by_bone": dict(sorted(by.items(), key=lambda kv: -kv[1])), "nearest_cm": round(near, 2),
                 "eye": [round(x, 4) for x in eye], "scene_objects_seen_first": objs, "scene_objects_nearest_cm": onear,
                 "scene_samples": ((nx + 1) // 2) * ((ny + 1) // 2)}
+
+    def unclip_seen(self, ec, step_cm=0.2, tries=5, res=(96, 54)):
+        """The market's fix for clipping the eye sees: each hand the check names moved back off the gun, against its
+        palm's facing, step_cm at a time (the arm by IK), until the eye sees none or tries run out. Returns the moves."""
+        L = self.L
+        moved = {}
+        for _ in range(tries):
+            if not ec["clip_pixels"]:
+                break
+            for sd in ec.get("sides") or ("r", "l"):
+                hn = L._n("hand", sd)
+                f = Vector(list(L._palm_facing(sd))).normalized()
+                L._put_hand(sd, Matrix.Translation(-f * (step_cm / 100.0)) @ L._bw(hn).copy())
+                moved[sd] = round(moved.get(sd, 0.0) + step_cm, 2)
+            ec = self.eye_clip(res=res)
+        return moved, ec
 
     # --- the hold -------------------------------------------------------------------------------------------------
     def grasp(self, side, mark, kind="palm"):
