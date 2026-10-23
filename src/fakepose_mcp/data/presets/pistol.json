@@ -79,9 +79,8 @@
    "push_out": true,
    "fingers": {
     "index": {
-     "rule": "curl_to_contact",
-     "target_deg": "fist",
-     "other_hand": false
+     "rule": "keep",
+     "why": "the index straight along the magazine's front, guiding it into the well"
     },
     "middle": {
      "rule": "curl_to_contact",
@@ -117,9 +116,8 @@
    "push_out": true,
    "fingers": {
     "index": {
-     "rule": "curl_to_contact",
-     "target_deg": "fist",
-     "other_hand": false
+     "rule": "keep",
+     "why": "the index straight along the magazine's front"
     },
     "middle": {
      "rule": "curl_to_contact",
@@ -156,8 +154,12 @@
    "fingers": {
     "index": {
      "rule": "curl_to_contact",
-     "target_deg": "fist",
-     "other_hand": false
+     "target_deg": [
+      40.0,
+      45.0,
+      30.0
+     ],
+     "why": "half closed over the slide's right side: a full fist missed the slide"
     },
     "middle": {
      "rule": "curl_to_contact",
@@ -182,42 +184,47 @@
    }
   },
   "l:slide_front": {
-   "source": "authored (fakepose 0.1, 2026-10-23): the press check, thumb and index pinching the slide's front from above",
+   "source": "authored (fakepose 0.1, 2026-10-24): the press check from the side, the support hand on the slide's left, thumb and index pinching its front",
    "contact": "pinch",
    "palm_into": {
-    "up": -1.0
+    "left": -1.0
    },
    "fingers_toward": {
-    "left": -1.0
+    "up": 0.6,
+    "forward": 0.8
    },
    "push_out": true,
    "fingers": {
     "index": {
      "rule": "curl_to_contact",
-     "target_deg": "fist",
-     "other_hand": false
-    },
-    "thumb": {
-     "rule": "curl_to_contact",
-     "target_deg": "fist",
-     "other_hand": false
+     "target_deg": "fist"
     },
     "middle": {
      "rule": "curl_to_contact",
-     "target_deg": "fist",
-     "other_hand": false
+     "target_deg": "fist"
     },
     "ring": {
      "rule": "curl_to_contact",
-     "target_deg": "fist",
-     "other_hand": false
+     "target_deg": "fist"
     },
     "pinky": {
      "rule": "curl_to_contact",
-     "target_deg": "fist",
-     "other_hand": false
+     "target_deg": "fist"
+    },
+    "thumb": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist"
     }
    }
   }
+ },
+ "idle_pull": {
+  "back_cm": 8.0,
+  "down_cm": 7.0,
+  "pitch_deg": -6.0,
+  "aim_clips": [
+   "aim"
+  ],
+  "source": "authored (fakepose 0.1, 2026-10-24): the owner's words 'the idle position is just the aim position with a pull'; the hip carry pulled 8 cm back, 7 cm down, the muzzle 6 deg down; the aim clip keeps the aim"
  }
 }

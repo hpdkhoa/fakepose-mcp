@@ -1,208 +1,275 @@
 {
- "secs": 248,
- "eye_set": {
-  "head_bone": [
-   0.0,
-   -0.0066,
-   1.6258
-  ],
-  "eye": [
-   0.0,
-   -0.0655,
-   1.5978
-  ],
-  "gun_kit_eye": [
-   0.0,
-   0.023,
-   1.626
-  ],
-  "moved_cm": 9.29,
-  "source": "Unreal Engine 5.6 First Person template: FirstPersonCameraComponent attached to the mesh's head bone at FVector(-2.8, 5.89, 0)"
- },
- "aim": {
-  "eye_to_rear_sight_cm": 50.62,
-  "sight_line_off_the_eye_cm": 0.076,
-  "bore_to_view_deg": 0.086,
-  "elbow_target_deg": 5.0,
-  "reach_cm": 54.97
- },
+ "secs": 229,
  "home_eye_clip": 0,
  "holds": {
   "r:grip:palm": {
    "pushed": null,
    "short": 0.0,
-   "arm": {
-    "elbow_bend_deg": 25,
-    "wrist_bend_deg": 38,
-    "wrist_flexion_deg": -33,
-    "wrist_radial_deg": -24
+   "curls": {
+    "thumb": [
+     [
+      0.0,
+      37.0,
+      90.0
+     ],
+     "target"
+    ],
+    "middle": [
+     [
+      0.0,
+      56.3,
+      46.8
+     ],
+     "touch at segment 3"
+    ],
+    "ring": [
+     [
+      0.0,
+      52.8,
+      44.1
+     ],
+     "touch at segment 3"
+    ],
+    "pinky": [
+     [
+      0.0,
+      52.9,
+      44.5
+     ],
+     "touch at segment 3"
+    ]
    }
   },
   "l:support:palm": {
    "pushed": 2.5,
    "short": 0.0,
-   "arm": {
-    "elbow_bend_deg": 20,
-    "wrist_bend_deg": 34,
-    "wrist_flexion_deg": -33,
-    "wrist_radial_deg": -8
+   "curls": {
+    "index": [
+     [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "already touching on the preset (-0.12 cm)"
+    ],
+    "middle": [
+     [
+      9.5,
+      12.3,
+      11.3
+     ],
+     "touch at segment 3"
+    ],
+    "ring": [
+     [
+      7.4,
+      15.6,
+      13.1
+     ],
+     "touch at segment 3"
+    ],
+    "pinky": [
+     [
+      0.0,
+      0.0,
+      74.0
+     ],
+     "target"
+    ]
    }
   },
   "l:mag_grab:cup": {
    "pushed": 0.4,
    "short": 0.0,
-   "arm": {
-    "elbow_bend_deg": 57,
-    "wrist_bend_deg": 36,
-    "wrist_flexion_deg": -10,
-    "wrist_radial_deg": 35
+   "curls": {
+    "thumb": [
+     [
+      0.0,
+      37.0,
+      90.0
+     ],
+     "target"
+    ],
+    "middle": [
+     [
+      26.5,
+      33.9,
+      28.3
+     ],
+     "touch at segment 3"
+    ],
+    "ring": [
+     [
+      32.7,
+      38.8,
+      32.2
+     ],
+     "touch at segment 3"
+    ],
+    "pinky": [
+     [
+      84.0,
+      88.0,
+      0.0
+     ],
+     "target"
+    ]
    }
   },
   "l:slide_front:pinch": {
    "pushed": 0.0,
-   "short": 8.96,
-   "arm": {
-    "elbow_bend_deg": 2,
-    "wrist_bend_deg": 85,
-    "wrist_flexion_deg": 3,
-    "wrist_radial_deg": 85
+   "short": 0.0,
+   "curls": {
+    "thumb": [
+     [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "already touching on the preset (-0.07 cm)"
+    ],
+    "index": [
+     [
+      9.1,
+      11.1,
+      42.1
+     ],
+     "touch at segment 3"
+    ],
+    "middle": [
+     [
+      4.6,
+      5.9,
+      4.9
+     ],
+     "touch at segment 3"
+    ],
+    "ring": [
+     [
+      24.7,
+      29.3,
+      24.3
+     ],
+     "touch at segment 3"
+    ],
+    "pinky": [
+     [
+      84.0,
+      88.0,
+      0.0
+     ],
+     "target"
+    ]
    }
   },
   "l:slide_rear:pinch": {
    "pushed": 0.0,
    "short": 0.0,
-   "arm": {
-    "elbow_bend_deg": 72,
-    "wrist_bend_deg": 57,
-    "wrist_flexion_deg": 35,
-    "wrist_radial_deg": 54
+   "curls": {
+    "thumb": [
+     [
+      0.0,
+      37.0,
+      90.0
+     ],
+     "target"
+    ],
+    "index": [
+     [
+      40.0,
+      45.0,
+      30.0
+     ],
+     "target"
+    ],
+    "middle": [
+     [
+      42.1,
+      53.8,
+      44.9
+     ],
+     "touch at segment 3"
+    ],
+    "ring": [
+     [
+      39.5,
+      46.9,
+      38.9
+     ],
+     "touch at segment 3"
+    ],
+    "pinky": [
+     [
+      24.5,
+      25.7,
+      0.0
+     ],
+     "touch at segment 3"
+    ]
    }
   }
  },
  "clips_eye": {
-  "idle": {
-   "frames": 181,
-   "frames_checked": 31,
-   "frames_with_clip": 0,
-   "most_pixels": 0
-  },
-  "walk": {
-   "frames": 45,
-   "frames_checked": 8,
-   "frames_with_clip": 0,
-   "most_pixels": 0
-  },
-  "run": {
-   "frames": 37,
-   "frames_checked": 7,
-   "frames_with_clip": 0,
-   "most_pixels": 0
-  },
-  "fire": {
-   "frames": 16,
-   "frames_checked": 3,
-   "frames_with_clip": 0,
-   "most_pixels": 0
-  },
-  "equip": {
-   "frames": 37,
-   "frames_checked": 7,
-   "frames_with_clip": 0,
-   "most_pixels": 0
-  },
-  "holster": {
-   "frames": 31,
-   "frames_checked": 6,
-   "frames_with_clip": 0,
-   "most_pixels": 0
-  },
-  "reload": {
-   "frames": 121,
-   "frames_checked": 21,
-   "frames_with_clip": 0,
-   "most_pixels": 0
-  },
-  "reload_empty": {
-   "frames": 133,
-   "frames_checked": 23,
-   "frames_with_clip": 0,
-   "most_pixels": 0
-  },
-  "charge": {
-   "frames": 67,
-   "frames_checked": 12,
-   "frames_with_clip": 0,
-   "most_pixels": 0
-  },
-  "check_chamber": {
-   "frames": 109,
-   "frames_checked": 19,
-   "frames_with_clip": 0,
-   "most_pixels": 0
-  },
-  "check_mag": {
-   "frames": 121,
-   "frames_checked": 21,
-   "frames_with_clip": 0,
-   "most_pixels": 0
-  }
- },
- "pics": {
-  "idle": {
-   "start": 0,
-   "mid": 0,
-   "end": 0
-  },
-  "walk": {
-   "start": 0,
-   "mid": 0,
-   "end": 0
-  },
-  "run": {
-   "start": 0,
-   "mid": 0,
-   "end": 0
-  },
-  "fire": {
-   "start": 0,
-   "mid": 0,
-   "end": 0
-  },
-  "equip": {
-   "start": 0,
-   "mid": 0,
-   "end": 0
-  },
-  "holster": {
-   "start": 0,
-   "mid": 0,
-   "end": 0
-  },
-  "reload": {
-   "start": 0,
-   "mid": 0,
-   "end": 0
-  },
-  "reload_empty": {
-   "start": 0,
-   "mid": 0,
-   "end": 0
-  },
-  "charge": {
-   "start": 0,
-   "mid": 0,
-   "end": 0
-  },
-  "check_chamber": {
-   "start": 0,
-   "mid": 0,
-   "end": 0
-  },
-  "check_mag": {
-   "start": 0,
-   "mid": 0,
-   "end": 0
-  }
+  "idle": [
+   0,
+   0,
+   31
+  ],
+  "walk": [
+   0,
+   0,
+   8
+  ],
+  "run": [
+   0,
+   0,
+   7
+  ],
+  "fire": [
+   0,
+   0,
+   3
+  ],
+  "equip": [
+   0,
+   0,
+   7
+  ],
+  "holster": [
+   0,
+   0,
+   6
+  ],
+  "reload": [
+   0,
+   0,
+   21
+  ],
+  "reload_empty": [
+   0,
+   0,
+   23
+  ],
+  "charge": [
+   0,
+   0,
+   12
+  ],
+  "check_chamber": [
+   0,
+   0,
+   19
+  ],
+  "check_mag": [
+   0,
+   0,
+   21
+  ],
+  "aim": [
+   0,
+   0,
+   31
+  ]
  },
  "written": [
   "idle",
@@ -215,7 +282,8 @@
   "reload_empty",
   "charge",
   "check_chamber",
-  "check_mag"
+  "check_mag",
+  "aim"
  ],
  "budget": null
 }
