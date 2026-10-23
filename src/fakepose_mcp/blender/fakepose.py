@@ -224,6 +224,8 @@ class FakePose:
         key, p = self.preset(side, mark, kind)
         if p is None:
             raise KeyError("fakepose: no preset for %s %s %s" % (side, mark, kind))
+        if p.get("mirror_of"):
+            return self.mirrored(side, p), None, key + ": " + p.get("source", "")
         F, U, Lf = self.gun_axes()
         basis = {"forward": F, "up": U, "left": Lf}
         vec = lambda d: unit(sum(basis[k] * float(w) for k, w in d.items()))       # noqa: E731
@@ -242,6 +244,30 @@ class FakePose:
         M[:3, :3] = R @ H0[:3, :3]
         M[:3, 3] = at - R @ (anc - H0[:3, 3])
         return Matrix(M.tolist()), None, key + ": " + p.get("source", "")
+
+    def mirrored(self, side, p):
+        """A hold authored as the mirror of another hand's hold across the gun's middle plane (the way a support grip
+        is made from the firing grip), moved by shift_cm in the gun's axes. The mirror keeps the rig's own left/right
+        bone convention: the turn between a hand's rest and its mirrored twin's rest is carried over."""
+        L, gk = self.L, self.gk
+        o_side, o_mark = p["mirror_of"].split(":")
+        Ho = self.hand_on(o_side, o_mark, "palm")[0]
+        A = L.arm.matrix_world
+        mr = A @ L.arm.data.bones[L._n("hand", o_side)].matrix_local
+        ml = A @ L.arm.data.bones[L._n("hand", side)].matrix_local
+        Srig = A @ Matrix.Diagonal((-1.0, 1.0, 1.0, 1.0)) @ A.inverted()
+        K = mr.inverted() @ Srig.inverted() @ ml
+        F, U, Lf = self.gun_axes()
+        o = Vector(list(self.to_world((0.0, 0.0, 0.0))))
+        n = Vector(list(Lf))
+        Sg = Matrix.Translation(o) @ (Matrix.Identity(4) - 2.0 * Matrix([[n.x * n.x, n.x * n.y, n.x * n.z, 0], [n.y * n.x, n.y * n.y, n.y * n.z, 0],
+                                                                          [n.z * n.x, n.z * n.y, n.z * n.z, 0], [0, 0, 0, 0]])) @ Matrix.Translation(-o)
+        M = Sg @ Ho @ K
+        sh = p.get("shift_cm", {})
+        d = (F * float(sh.get("forward", 0.0)) + U * float(sh.get("up", 0.0)) + Lf * float(sh.get("left", 0.0))) / 100.0
+        M = Matrix.Translation(Vector(list(d))) @ M
+        loc, rot, _sc = M.decompose()
+        return Matrix.LocRotScale(loc, rot, L._unit())
 
     def hand_axes(self, p):
         F, U, Lf = self.gun_axes()
@@ -311,7 +337,7 @@ class FakePose:
         P, N = L._skin_arrays()[:2]
         _b, T, sidev, kind, _s = L._skin_static()
         sc = 2 if side == "r" else 1
-        keep = (sidev == sc) & (kind > 0)
+        keep = (sidev == sc) & (kind >= 2)              # the other hand's palm and digits (not its forearm)
         tri = [t for t in T if keep[t[0]] and keep[t[1]] and keep[t[2]]]
         if not tri:
             return None
@@ -546,7 +572,8 @@ class FakePose:
         key, p = self.preset(side, mark, kind)
         pushed = None
         if p and p.get("push_out"):
-            pushed = self.push_out(side, np.asarray(self.hand_axes(p)[0]))
+            into_ = np.asarray(self.hand_axes(p)[0]) if "palm_into" in p else -np.asarray(self.gun_axes()[2]) * (1.0 if side == "l" else -1.0)
+            pushed = self.push_out(side, into_)
         rules = (p or {}).get("fingers") or self.presets.get("captured_fingers", {}).get("%s:%s" % (side, mark), {})
         curls = {}
         for digit in DIGITS:

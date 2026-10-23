@@ -33,15 +33,7 @@
    }
   },
   "l:support:palm": {
-   "source": "authored (fakepose 0.1, 2026-10-23) after FM 3-23.35 2-2, the two-hand grip: the support palm fills the grip's open (left) side over the firing fingers, its fingers wrapping the firing fingers forward and down, the thumb forward along the frame; placed 2 cm above the support mark, fingers forward and 31 deg down (the support index under the trigger guard)",
-   "contact": "palm_skin",
-   "palm_into": {
-    "left": -1.0
-   },
-   "fingers_toward": {
-    "forward": 1.0,
-    "up": -0.6
-   },
+   "source": "authored (fakepose 0.1, 2026-10-23): the firing grip mirrored across the gun's middle plane, 1.5 cm forward and 1.5 cm down, set down onto the firing fingers (push out): the support palm over the firing fingers on the grip's open side (FM 3-23.35 2-2), the way games make a support grip from the firing one",
    "push_out": true,
    "fingers": {
     "index": {
@@ -69,8 +61,10 @@
      "why": "thumbs forward, along the frame"
     }
    },
-   "offset_cm": {
-    "up": 2.0
+   "mirror_of": "r:grip",
+   "shift_cm": {
+    "forward": 1.5,
+    "up": -1.5
    }
   },
   "l:mag_grab": {
