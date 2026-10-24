@@ -225,7 +225,8 @@ class FakePose:
             # portion of the cheek placed on the stock"): the rear sight EYE_RELIEF_CM in front of the eye along the
             # view; the arms reach the gun where it is, the butt's place against the shoulder reported
             s1 = self.sights()
-            dd = float((eye + VF * (self.EYE_RELIEF_CM / 100.0) - s1["rear"]) @ VF)
+            relief = float(((self.gk.get("facts") or {}).get("sights") or {}).get("eye_relief_cm") or self.EYE_RELIEF_CM)
+            dd = float((eye + VF * (relief / 100.0) - s1["rear"]) @ VF)
             D2 = np.eye(4)
             D2[:3, 3] = VF * dd
             self.gk["move_gun"](Matrix(D2.tolist()))
@@ -233,7 +234,8 @@ class FakePose:
             out = {"eye_to_rear_sight_cm": round(float(np.linalg.norm(s2["rear"] - eye)) * 100.0, 2),
                    "sight_line_off_the_eye_cm": round(float(np.linalg.norm(np.cross(s2["rear"] - eye, unit(s2["front"] - s2["rear"])))) * 100.0, 3),
                    "bore_to_view_deg": round(math.degrees(math.acos(min(1.0, float(unit(s2["front"] - s2["rear"]) @ VF)))), 3),
-                   "rule": "the cheek weld: the rear sight %.0f cm in front of the eye" % self.EYE_RELIEF_CM}
+                   "rule": "the cheek weld: the rear sight %.1f cm in front of the eye (%s)" % (
+                       relief, "the gun's sourced eye relief" if relief != self.EYE_RELIEF_CM else "a guess")}
             self.gun_bvh()
             Sh = np.array(list(L._bw(L._n("upperarm", side)).translation))
             out["butt_ahead_of_shoulder_joint_cm"] = round((float(np.min(self._gverts @ VF)) - float(Sh @ VF)) * 100.0, 2)

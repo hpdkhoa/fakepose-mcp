@@ -293,6 +293,58 @@
      "other_hand": false
     }
    }
+  },
+  "r:knob": {
+   "source": "authored (fakepose 0.2, 2026-10-24) from FM 23-10 p. 2-17: \"Raise the bolt handle. Then pull the bolt handle all the way back ... Push the bolt handle down\": the firing hand takes the bolt knob between the thumb and the bent index and middle fingers, the palm toward the gun",
+   "contact": "pinch",
+   "palm_into": {
+    "left": 1.0
+   },
+   "fingers_toward": {
+    "up": 0.7,
+    "forward": 0.7
+   },
+   "push_out": true,
+   "fingers": {
+    "index": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "middle": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "thumb": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    }
+   }
+  },
+  "r:charger": {
+   "source": "authored (fakepose 0.2, 2026-10-24) from FM 23-10 p. 2-17: \"Push five cartridges ... one at a time through the ejection port into the magazine ... Use a finger to push the cartridges into the magazine and all the way down\": the hand over the open action, the palm down, the thumb pressing a round down",
+   "contact": "pinch",
+   "palm_into": {
+    "up": -1.0
+   },
+   "fingers_toward": {
+    "forward": 1.0
+   },
+   "push_out": true,
+   "fingers": {
+    "index": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    },
+    "thumb": {
+     "rule": "curl_to_contact",
+     "target_deg": "fist",
+     "other_hand": false
+    }
+   }
   }
  },
  "idle_pull": {
