@@ -13,7 +13,7 @@ import os
 
 import bpy
 import numpy as np
-from mathutils import Matrix, Vector
+from mathutils import Matrix, Quaternion, Vector
 from mathutils.bvhtree import BVHTree
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -556,6 +556,12 @@ class FakePose:
         nx, ny = res
         lim = self.glove / 100.0
         clip, seen_gun, seen_skin, where = 0, 0, 0, []
+        out_ = {}          # per side: the deepest clip's way out, a world vector as long as its depth
+        parts_ = {}        # per side: the digits that clip, and "palm" when the palm or forearm does
+        DG_ = ("thumb", "index", "middle", "ring", "pinky")
+
+        def part_of(v):
+            return DG_[int(_s[v]) // 3] if int(kind[v]) == 3 and int(_s[v]) >= 0 else "palm"
         for iy in range(ny):
             y = (1.0 - 2.0 * (iy + 0.5) / ny) * t / ASPECT
             for ix in range(nx):
@@ -580,6 +586,10 @@ class FakePose:
                         clip += 1
                         sd_ = {1: "r", 2: "l"}.get(int(sidev[tri[_i][0]]), "?") if _i is not None else "?"
                         where.append(("gun in skin", ix, iy, round(dist * 100.0, 2), sd_))
+                        if _i is not None:
+                            parts_.setdefault(sd_, set()).add(part_of(tri[_i][0]))
+                        if dist > out_.get(sd_, (0.0, None))[0]:
+                            out_[sd_] = (dist, -nrm.normalized() * dist)     # the skin moved past the gun's point
                 else:
                     seen_skin += 1
                     q = hs[0]
@@ -588,8 +598,15 @@ class FakePose:
                         clip += 1
                         sd_ = {1: "r", 2: "l"}.get(int(sidev[tri[hs[2]][0]]), "?") if hs[2] is not None else "?"
                         where.append(("skin in gun", ix, iy, round(-D, 2), sd_))
+                        if hs[2] is not None:
+                            parts_.setdefault(sd_, set()).add(part_of(tri[hs[2]][0]))
+                        gl, gn, _gi, _gd = gun.find_nearest(q)
+                        if gl is not None and -D / 100.0 > out_.get(sd_, (0.0, None))[0]:
+                            out_[sd_] = (-D / 100.0, (gl - q).normalized() * (-D / 100.0))   # the skin's point out to the gun's face
         return {"clip_pixels": clip, "pixels": nx * ny, "sides": sorted(set(w[4] for w in where if w[4] in ("r", "l"))), "gun_pixels": seen_gun, "skin_pixels": seen_skin,
                 "deepest_seen_cm": max((w[3] for w in where), default=0.0), "where": where[:40],
+                "way_out": {k: [float(c) for c in v[1]] for k, v in out_.items() if k in ("r", "l") and v[1] is not None},
+                "parts": {k: sorted(v) for k, v in parts_.items() if k in ("r", "l")},
                 "rule": "the owner's choice (b), 2026-10-23: zero clipping seen from the first-person camera"}
 
     def eye_blockers(self, res=(96, 54)):
@@ -637,19 +654,91 @@ class FakePose:
                 "eye": [round(x, 4) for x in eye], "scene_objects_seen_first": objs, "scene_objects_nearest_cm": onear,
                 "scene_samples": ((nx + 1) // 2) * ((ny + 1) // 2)}
 
-    def unclip_seen(self, ec, step_cm=0.2, tries=5, res=(96, 54)):
-        """The market's fix for clipping the eye sees: each hand the check names moved back off the gun, against its
-        palm's facing, step_cm at a time (the arm by IK), until the eye sees none or tries run out. Returns the moves."""
+    def digit_depth(self, side, digit):
+        """How deep a digit's skin sits in the gun (cm, 0 when it is out): its deepest skin point's signed distance."""
+        L = self.L
+        P = L._skin_arrays()[0]
+        _b, _T, sidev, kind, segi = L._skin_static()
+        k = {"thumb": 0, "index": 1, "middle": 2, "ring": 3, "pinky": 4}[digit]
+        m = (sidev == (1 if side == "r" else 2)) & (kind == 3) & (segi // 3 == k)
+        if not m.any():
+            return 0.0
+        return max(0.0, -float(np.min(self.gun_signed(P[m].tolist()))))
+
+    def open_to_clear(self, side, digit, step_deg=5.0, max_deg=60.0):
+        """A digit that clips opened the way games do: its three joints turned together against their curl (each
+        joint's hinge and its curling sign read as curl_to_contact reads them), step_deg at a time, until its skin is
+        out of the gun by the glove or it has opened max_deg. Returns how far it opened (degrees)."""
+        L = self.L
+        names = [L._n("finger", side, digit, j) for j in ("01", "02", "03")]
+        base = [L._bw(n).copy() for n in names]
+        if digit == "thumb":
+            hinge = []
+            for j in ("01", "02", "03"):
+                ax_ = L._thumb_report(side, L._thumb_limits())[2].get(j)
+                hinge.append(Vector(list(ax_)) if ax_ is not None else None)
+        else:
+            hinge = [Vector(list(L._finger_report(side, L._limits()[1])[2][digit]))] * 3
+        f0 = Vector(list(L._palm_facing(side)))
+        tip = (lambda: L._anchor(side, "thumb_tip")) if digit == "thumb" else (lambda: L._finger_tip(digit, side))
+        sign = []
+        for j, n in enumerate(names):
+            if hinge[j] is None:
+                sign.append(0.0)
+                continue
+            t0 = Vector(list(tip()))
+            L._turn_about(n, hinge[j], 5.0, base[j].translation)
+            sign.append(1.0 if (Vector(list(tip())) - t0).dot(f0) > 0.0 else -1.0)
+            for n_, M_ in zip(names, base):
+                L._set_world(n_, M_)
+
+        def pose(a):
+            for n_, M_ in zip(names, base):
+                L._set_world(n_, M_)
+            for j, n in enumerate(names):
+                if hinge[j] is None:
+                    continue
+                h = hinge[j].copy()
+                for i in range(j):
+                    if hinge[i] is not None:
+                        h = Matrix.Rotation(math.radians(-sign[i] * a), 3, hinge[i]) @ h
+                L._turn_about(n, h, -sign[j] * a, L._bw(n).translation.copy())
+            bpy.context.view_layer.update()
+        a = 0.0
+        while self.digit_depth(side, digit) > self.glove and a < max_deg:
+            a += step_deg
+            pose(a)
+        return a
+
+    def unclip_seen(self, ec, tries=6, res=(96, 54), max_cm=4.0, step_cm=0.2):
+        """The market's fix for clipping the eye sees, in the order games use: the digits the check names opened
+        until each is out of the gun (open_to_clear); then, while the palm still clips, the hand moved straight out
+        of the gun along the deepest clip's way out by its depth plus the glove, up to max_cm in all (with no way out
+        measured, set back against the palm's facing step_cm at a time). Checked again after each round. Returns the
+        moves (cm, and the digits opened) and the last check."""
         L = self.L
         moved = {}
         for _ in range(tries):
             if not ec["clip_pixels"]:
                 break
             for sd in ec.get("sides") or ("r", "l"):
+                parts = ec.get("parts", {}).get(sd) or ["palm"]
+                digits = [p for p in parts if p != "palm"]
+                for dg in digits:
+                    moved.setdefault("opened", {})["%s:%s" % (sd, dg)] = self.open_to_clear(sd, dg)
+                if moved.get(sd, 0.0) >= max_cm:
+                    continue
+                if "palm" not in parts and all(self.digit_depth(sd, dg) <= self.glove for dg in digits):
+                    continue                     # the opened digits cleared it: the hand stays
                 hn = L._n("hand", sd)
-                f = Vector(list(L._palm_facing(sd))).normalized()
-                L._put_hand(sd, Matrix.Translation(-f * (step_cm / 100.0)) @ L._bw(hn).copy())
-                moved[sd] = round(moved.get(sd, 0.0) + step_cm, 2)
+                w = ec.get("way_out", {}).get(sd)
+                if w:
+                    v = Vector(w)
+                    v = v.normalized() * min(v.length + self.glove / 100.0 + 0.002, (max_cm - moved.get(sd, 0.0)) / 100.0)
+                else:
+                    v = -Vector(list(L._palm_facing(sd))).normalized() * (step_cm / 100.0)
+                L._put_hand(sd, Matrix.Translation(v) @ L._bw(hn).copy())
+                moved[sd] = round(moved.get(sd, 0.0) + v.length * 100.0, 2)
             ec = self.eye_clip(res=res)
         return moved, ec
 
