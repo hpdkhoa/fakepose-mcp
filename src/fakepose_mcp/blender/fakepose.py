@@ -63,9 +63,11 @@ class FakePose:
         self.family = fam
         p = os.path.join(DATA, "presets", fam + ".json")
         out = json.load(open(p, encoding="utf-8")) if os.path.exists(p) else {"holds": {}}
-        cap = os.path.join(DATA, "presets", "captured", "%s_r_grip.json" % self.facts["name"])
-        if os.path.exists(cap):
-            out.setdefault("captured", {})["r:grip"] = json.load(open(cap, encoding="utf-8"))
+        import glob as _glob
+        for cap in sorted(_glob.glob(os.path.join(DATA, "presets", "captured", "%s_*.json" % self.facts["name"]))):
+            d_ = json.load(open(cap, encoding="utf-8"))
+            if d_.get("gun") == self.facts["name"] and d_.get("side") and d_.get("mark"):
+                out.setdefault("captured", {})["%s:%s" % (d_["side"], d_["mark"])] = d_
         out["file"] = p
         return out
 
@@ -174,13 +176,21 @@ class FakePose:
         aim crossed the view."""
         L = self.L
         done = []
-        for n in self.BODY_BONES:
-            pb = L.arm.pose.bones.get(n)
-            if pb is not None:
-                pb.matrix_basis.identity()
-                done.append(n)
-        bpy.context.view_layer.update()
-        self.report["body_rest"] = done
+        if self.family == "rifle" and self.presets.get("body", "template") == "template":
+            # the bar (the owner, 2026-10-25: the game's AR-15 clips): the first-person template's own body, its right
+            # shoulder over the eye (measured 2026-10-26 at the game's idle, view cm: right shoulder [4.1, -16.8, 10.8],
+            # left [-28.9, -12.4, -11.8]); an anatomical body put the right shoulder 16 cm under the eye and the
+            # firing wrist at 40 to 55 degrees on a rifle's grip. The pistol family keeps the anatomical body (the
+            # owner's approved M1911A1).
+            self.report["body_rest"] = {"kept": "the rig's own idle body (the first-person template's)", "reset": []}
+        else:
+            for n in self.BODY_BONES:
+                pb = L.arm.pose.bones.get(n)
+                if pb is not None:
+                    pb.matrix_basis.identity()
+                    done.append(n)
+            bpy.context.view_layer.update()
+            self.report["body_rest"] = done
         return done
 
     def set_eye(self):
@@ -286,6 +296,34 @@ class FakePose:
 
     # --- joint limits in the IK (the owner, 2026-10-25: "go with the joint limits") -----------------------------------
     WRIST_MAX, ELBOW_MIN, ELBOW_MAX, ELBOW_UNDER_CM = 30.0, 5.0, 150.0, 2.0
+    TURN_MAX = 40.0            # the hand's turn on its palm's normal, at most (a cant of the hand on a grip)
+
+    def hand_points_for(self, side, M):
+        """The hand's knuckles and fingertips as M would place them (world), to test a turn against the gun."""
+        L = self.L
+        Hn = L._bw(L._n("hand", side))
+        inv = Hn.inverted()
+        pts = []
+        for fi in ("index", "middle", "ring", "pinky", "thumb"):
+            for j in ("01", "02", "03"):
+                try:
+                    pts.append(inv @ L._bw(L._n("finger", side, fi, j)).translation)
+                except Exception:
+                    pass
+            try:
+                pts.append(inv @ L._finger_tip(fi, side))
+            except Exception:
+                pass
+        return [list(M @ q) for q in pts]
+
+    def turn_keeps_out(self, side, M):
+        """True when no knuckle or tip of the hand at M sits inside the gun past the glove (the turn must not push
+        the fingers into the receiver)."""
+        pts = self.hand_points_for(side, M)
+        if not pts:
+            return True
+        D = self.gun_signed(pts)
+        return float(np.min(D)) >= -self.glove
 
     def install_limits(self):
         """Pose Lab's _put_hand replaced by the limited one for every later placement (the holds and every clip
@@ -385,9 +423,12 @@ class FakePose:
             M2 = Matrix.Translation(-F_ * (k * step_cm / 100.0)) @ M
             Mr = Matrix.Translation(shift) @ M2
             _E, wrist, bend, under = self.best_elbow(side, Mr)
-            ok = bend >= self.ELBOW_MIN + 10.0 and wrist <= self.WRIST_MAX + 10.0
-            if best is None or (ok and not best[0]):
-                best = (ok, k * step_cm, M2)
+            _E2, wrist2, bend2, _u2 = self.best_elbow(side, M2)          # at the aim too (the gun 5 cm nearer)
+            ok = min(bend, bend2) >= self.ELBOW_MIN + 10.0 and max(wrist, wrist2) <= self.WRIST_MAX + 10.0
+            # the least violation wins when no station is clean: the elbow's shortfall under 15 and the wrist's excess
+            viol = max(0.0, self.ELBOW_MIN + 10.0 - min(bend, bend2)) + max(0.0, max(wrist, wrist2) - (self.WRIST_MAX + 10.0))
+            if best is None or viol < best[3]:
+                best = (ok, k * step_cm, M2, viol)
             if ok:
                 break
         return best[2], best[1]
@@ -399,13 +440,15 @@ class FakePose:
         local = Hn.to_3x3().inverted() @ Vector(list(L._palm_facing(side)))
         return unit(np.array(list(M.to_3x3() @ local)))
 
-    def turn_hand_within(self, side, M, max_deg=25.0, step_deg=2.5):
+    def turn_hand_within(self, side, M, max_deg=None, step_deg=2.5):
         """When the best elbow still leaves the wrist over its limit: the hand turned about its palm's normal through
         its wrist (the palm stays on the mark's face), by the least angle that brings the wrist inside, at most
         max_deg. Returns (the new M, degrees turned, the wrist after)."""
+        max_deg = self.TURN_MAX if max_deg is None else max_deg
         _E, wrist, _b, _u = self.best_elbow(side, M)
         if wrist <= self.WRIST_MAX:
             return M, 0.0, wrist
+        self.gun_bvh()
         n = Vector(self.palm_normal_for(side, M).tolist())
         pivot = M.translation.copy()
         best = (wrist, M, 0.0)
@@ -414,6 +457,8 @@ class FakePose:
                 a = sgn * k * step_deg
                 R = Matrix.Rotation(math.radians(a), 4, n)
                 M2 = Matrix.Translation(pivot) @ R @ Matrix.Translation(-pivot) @ M
+                if not self.turn_keeps_out(side, M2):
+                    break                        # this way turns the fingers into the gun: no further
                 _E2, w2, _b2, _u2 = self.best_elbow(side, M2)
                 if w2 < best[0]:
                     best = (w2, M2, a)
@@ -904,6 +949,11 @@ class FakePose:
             into_ = np.asarray(self.hand_axes(p)[0]) if "palm_into" in p else -np.asarray(self.gun_axes()[2]) * (1.0 if side == "l" else -1.0)
             pushed = self.push_out(side, into_)
         rules = (p or {}).get("fingers") or self.presets.get("captured_fingers", {}).get("%s:%s" % (side, mark), {})
+        if fingers and not self.presets.get("captured_fingers", {}).get("%s:%s" % (side, mark)):
+            # a captured hold brings the bar's finger turns for the bar's gun; on another gun each digit still closes
+            # to contact by the authored preset's rules, from those turns (an open hand beside a slimmer handguard is
+            # not a hold)
+            rules = (p or {}).get("fingers") or {}
         curls = {}
         for digit in DIGITS:
             r = rules.get(digit)

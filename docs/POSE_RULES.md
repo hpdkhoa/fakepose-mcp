@@ -61,6 +61,38 @@ roll turning the grip hand 60 degrees with it; a real shooter lets the gun roll 
 and the hold does neither yet. The cover stays at 7 % with the pose matched to the bar's numbers: the difference is
 the arms' bulk and the model, not the gun's place; the bar's cover number carries the pack's thick sleeves.
 
+## Run 3, 2026-10-26: the bar's body and holds
+
+The owner (2026-10-26): "keep the cover band, fix the rolled wrist and the clipping first." Measured on the way: the
+game's right shoulder sits 11 cm over the eye (the first-person template's body; view cm: right shoulder
+[4.1, -16.8, 10.8], left [-28.9, -12.4, -11.8]); fakepose's anatomical body (my choice of 2026-10-24) put it 16 cm
+under. With the shoulder 27 cm lower no elbow kept the wrist inside, and the hand turns that run 2 used had pushed
+fingers into the grip (a contact test on the turn now stops that). Built: the rifle family keeps the template body
+(pistols keep the anatomical one, the approved M1911A1); the bar's own right grip and left support captured from the
+game's idle as fakepose holds for the AR15 (`presets/captured/AR15_*.json`); the AR check's forward-assist tap dropped
+(not in the bar; it bent the left wrist 114); the support slide checks the aim too and takes the least violation;
+captured fingers close to contact by the authored rules; cover is not judged on equip, holster and run (the gun
+leaves the view by design); Gun Kit's `hands()` reads its report from the folder it wrote (a stale-report bug).
+
+| # | Rule | Game AR-15 | fakepose AR15, run 3 | Result |
+|---|---|---|---|---|
+| 1 | bore parallel at rest | 0 / 0 / 0 | 0 / 0 / 0 | PASS |
+| 2 | rear sight at rest | [3.8, 13.1, -4.4] | [3.8, 13.1, -4.4] | PASS |
+| 3 | muzzle near the centre | [0.09, -0.19] | [0.05, -0.26] | PASS |
+| 4 | cover 10 to 20 % | 11 to 19 % | aim 15.7, idle 9.7, fire 9.6, reload_empty 9.7, walk 8.4, reload 7.8, check_mag 7.1, charge 6.8, check 6.5 (least per clip) | FAIL (idle and fire 0.3 under) |
+| 5 | support hand on screen at rest | yes | [-0.21, -0.84] | PASS |
+| 6 | check and charge: roll 60, port to the eye | port 65 % | port 94 to 100 % | PASS |
+| 7 | the pulling hand on screen | yes | 19 to 24 % of the frames | FAIL |
+| 8 | wrist 30, elbow 5 to 150, under the shoulder | kept | right: 10 at the hold, 8 rolled 60, 25 at most (was 48); left: support 14 (slid 8 cm) but its elbow 2.2 (locked straight, the game's is 27), 62 in the transit to the handle, catch 48 | FAIL (right passes; left elbow and transits fail) |
+| 9 | zero clipping seen | 0 | 1 frame (reload_empty) | FAIL |
+| 10 | targets and palms | yes | yes | PASS |
+
+6 of 10 pass; the right arm meets the bar on every clip. What remains is the left arm: the template body's left
+shoulder sits 29 cm left of the eye, so the support hand is at the arm's full reach (the bar itself has that elbow
+at 27 degrees), and the moves to the handle and the catch bend the wrist in transit. The cover in idle and fire sits
+0.3 % under the band. The captured support's fingers stay open beside the AR15's slimmer rail (the closure from the
+pack's finger turns reads "already touching"): to mend.
+
 ## What fakepose must change to meet the bar
 
 1. `idle_pull`: replace 14 down / 6 right / -4 back / pitch -10 with the bar's rest hold: the rear sight at [4, 13, -4]
