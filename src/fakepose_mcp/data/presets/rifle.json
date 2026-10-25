@@ -348,28 +348,48 @@
   }
  },
  "idle_pull": {
-  "back_cm": -4.0,
-  "down_cm": 14.0,
-  "right_cm": 6.0,
-  "pitch_deg": -10.0,
+  "back_cm": -5.1,
+  "down_cm": 4.4,
+  "right_cm": 3.8,
+  "pitch_deg": 0.0,
   "aim_clips": [
    "aim"
   ],
-  "source": "authored (fakepose 0.1, 2026-10-24): the owner's 'the idle position is just the aim position with a pull': a rifle's low ready, off the cheek: 14 cm down, 6 cm right, 4 cm forward, the muzzle 10 deg down; the aim clip keeps the aim",
+  "source": "the game's AR-15 idle measured with Pose Lab (2026-10-25, docs/POSE_RULES.md rules 1 to 3): the bore parallel to the view, the rear sight 13.1 cm ahead, 3.8 cm right and 4.4 cm under the eye line; from the aim's rear sight at its eye relief (8 cm default) that is 5.1 cm forward, 3.8 right, 4.4 down, no pitch. Replaces the authored 14 cm pull of 2026-10-24, which put the gun out of the view (0.8 % cover). The aim clip keeps the aim",
   "load_view": {
-   "source": "the owner, 2026-10-24: \"fix the reload view\" (agreed: the rifle raised and brought in so the port sits in the lower third of the first-person view, rolled toward the eye, the hand coming to the port from the right side)",
+   "source": "the owner, 2026-10-24: \"fix the reload view\" (agreed: the rifle raised and brought in so the port sits in the lower third of the first-person view, rolled toward the eye, the hand coming to the port from the right side); the owner, 2026-10-25 (POSE_RULES.md rule 4, the fix list): a magazine rifle and a tube gun only roll toward the loading point (the magazine's middle, the loading port), they do not leave the view; the M24's charger keeps the agreed move and roll",
    "clips": [
     "reload",
     "reload_empty"
    ],
-   "mark": "charger",
-   "face_mark": "port",
+   "mark": [
+    "charger",
+    "mag_well",
+    "load_port"
+   ],
+   "face_mark": {
+    "charger": "port",
+    "mag_well": "mag_grab",
+    "load_port": "load_port"
+   },
    "screen": [
     0.55,
     0.75
    ],
    "depth_cm": 40.0,
-   "max_roll_deg": 35.0
+   "max_roll_deg": 35.0,
+   "mode": {
+    "charger": "move_and_roll",
+    "mag_well": "roll",
+    "load_port": "roll"
+   },
+   "mark_offset_cm": {
+    "mag_well": [
+     0.0,
+     0.0,
+     -8.0
+    ]
+   }
   }
  }
 }

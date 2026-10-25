@@ -284,6 +284,145 @@ class FakePose:
         self.report["aim"] = out
         return out
 
+    # --- joint limits in the IK (the owner, 2026-10-25: "go with the joint limits") -----------------------------------
+    WRIST_MAX, ELBOW_MIN, ELBOW_MAX, ELBOW_UNDER_CM = 30.0, 5.0, 150.0, 2.0
+
+    def install_limits(self):
+        """Pose Lab's _put_hand replaced by the limited one for every later placement (the holds and every clip
+        frame): the market's IK, with the joint limits a mocap body has. Nothing is refused; the elbow is chosen so the
+        wrist bends least, under the shoulder and inside its hinge."""
+        L = self.L
+        if getattr(L, "_put_hand_unlimited", None) is None:
+            L._put_hand_unlimited = L._put_hand
+            L._put_hand = self.limited_put_hand
+        self.report["joint_limits"] = {"wrist_max_deg": self.WRIST_MAX, "elbow_bend_deg": [self.ELBOW_MIN, self.ELBOW_MAX],
+                                       "elbow_under_shoulder_cm": self.ELBOW_UNDER_CM,
+                                       "source": "Tools/blender/anatomy.py (the owner's rules of 2026-10-08, AAOS ranges); in the IK as limits, not walls"}
+
+    def _knuckle_dir(self, side, M):
+        """The hand's line (wrist to the middle knuckle) as the hand matrix M would set it."""
+        L = self.L
+        Hn = L._bw(L._n("hand", side))
+        k_local = Hn.inverted() @ L._bw(L._n("finger", side, "middle", "01")).translation
+        return unit(np.array(list(M.to_3x3() @ k_local)))
+
+    def best_elbow(self, side, M):
+        """The elbow on its IK circle (the shoulder to the wrist's goal) where the wrist bends least off the forearm,
+        among the places that keep the elbow under the shoulder and its bend inside the hinge; the least violation
+        when none does. Returns (elbow point, wrist bend deg, elbow bend deg, elbow under the shoulder cm)."""
+        L = self.L
+        S = np.array(list(L._bw(L._n("upperarm", side)).translation))
+        E0 = np.array(list(L._bw(L._n("lowerarm", side)).translation))
+        W0 = np.array(list(L._bw(L._n("hand", side)).translation))
+        l1, l2 = float(np.linalg.norm(E0 - S)), float(np.linalg.norm(W0 - E0))
+        G = np.array(list(M.translation))
+        d = min(float(np.linalg.norm(G - S)), l1 + l2 - 1e-4)
+        axis = unit(G - S)
+        x = (l1 * l1 - l2 * l2 + d * d) / (2.0 * d)
+        h = max(l1 * l1 - x * x, 0.0) ** 0.5
+        u = np.cross(axis, [0.0, 0.0, 1.0])
+        u = unit(u) if np.linalg.norm(u) > 1e-6 else np.array([1.0, 0.0, 0.0])
+        v = np.cross(axis, u)
+        hd = self._knuckle_dir(side, M)
+        W = S + axis * d
+        best = None
+        for k in range(72):
+            a = 2.0 * math.pi * k / 72
+            E = S + axis * x + (u * math.cos(a) + v * math.sin(a)) * h
+            fore = unit(W - E)
+            wrist = math.degrees(math.acos(max(-1.0, min(1.0, float(fore @ hd)))))
+            bend = 180.0 - math.degrees(math.acos(max(-1.0, min(1.0, float(unit(S - E) @ fore)))))
+            under = float((S - E)[2]) * 100.0
+            viol = max(0.0, self.ELBOW_UNDER_CM - under) + max(0.0, self.ELBOW_MIN - bend) + max(0.0, bend - self.ELBOW_MAX)
+            key = (round(viol, 2), round(wrist, 1))
+            if best is None or key < best[0]:
+                best = (key, E, wrist, bend, under)
+        _key, E, wrist, bend, under = best
+        return E, wrist, bend, under
+
+    def limited_put_hand(self, side, M):
+        """Pose Lab's _put_hand with the joint limits: the elbow from best_elbow, the hand set to M, the roll into the
+        forearm. Returns the reach short (cm) as _put_hand does; the readings go to self.last_limits[side]."""
+        L = self.L
+        E, wrist, bend, under = self.best_elbow(side, M)
+        turned = 0.0
+        if wrist > self.WRIST_MAX and getattr(self, "turn_per_frame", True):
+            # no elbow place keeps the wrist inside: the hand turns on its palm's normal (it stays on the mark), the
+            # least that brings the wrist in, as a real wrist and hand share a reach
+            M, turned, _w = self.turn_hand_within(side, M)
+            E, wrist, bend, under = self.best_elbow(side, M)
+        hn = L._n("hand", side)
+        up, lo = L._n("upperarm", side), L._n("lowerarm", side)
+        S, E0, W0 = L._bw(up).translation, L._bw(lo).translation, L._bw(hn).translation
+        short = max(0.0, (M.translation - S).length - (E0 - S).length - (W0 - E0).length) * 100.0
+        L._two_bone(side, M.translation, pole_world=Vector(E.tolist()))
+        L._set_world(hn, Matrix.LocRotScale(L._bw(hn).translation, M.to_quaternion(), L._unit()))
+        L._roll_forearm(side)
+        if not hasattr(self, "last_limits"):
+            self.last_limits = {}
+        self.last_limits[side] = {"wrist_bend_deg": round(wrist, 1), "elbow_bend_deg": round(bend, 1), "elbow_under_cm": round(under, 1),
+                                  "hand_turned_deg": round(turned, 1)}
+        return short
+
+    def rest_shift(self):
+        """Where the rest hold moves the gun from the aim (the preset idle_pull), as a world vector."""
+        ip = self.presets.get("idle_pull") or {}
+        VR, VF, VU = (np.array(list(v)) for v in self.gk["view"])
+        return (VR * float(ip.get("right_cm", 0.0)) - VF * float(ip.get("back_cm", 0.0)) - VU * float(ip.get("down_cm", 0.0))) / 100.0
+
+    def slide_within_reach(self, side, mark, M, max_cm=20.0, step_cm=1.0):
+        """A support hold (the market's: the hand wherever it reaches along the handguard) slid back along the bore
+        until the arm reaches it at the rest hold with its elbow bent (at least ELBOW_MIN) and its wrist inside:
+        the bar's support hand sits 32 cm ahead of the eye, an arm's reach, not the handguard's front. Only marks the
+        preset flags slide_along_bore (the support by default)."""
+        _key, p = self.preset(side, mark, None if mark != "support" else "palm")
+        if not ((p or {}).get("slide_along_bore") or mark == "support"):
+            return M, 0.0
+        F_ = Vector(self.gun_axes()[0].tolist())
+        shift = Vector(self.rest_shift().tolist())
+        best = None
+        for k in range(int(max_cm / step_cm) + 1):
+            M2 = Matrix.Translation(-F_ * (k * step_cm / 100.0)) @ M
+            Mr = Matrix.Translation(shift) @ M2
+            _E, wrist, bend, under = self.best_elbow(side, Mr)
+            ok = bend >= self.ELBOW_MIN + 10.0 and wrist <= self.WRIST_MAX + 10.0
+            if best is None or (ok and not best[0]):
+                best = (ok, k * step_cm, M2)
+            if ok:
+                break
+        return best[2], best[1]
+
+    def palm_normal_for(self, side, M):
+        """The palm's normal (out of the palm) as M would set it."""
+        L = self.L
+        Hn = L._bw(L._n("hand", side))
+        local = Hn.to_3x3().inverted() @ Vector(list(L._palm_facing(side)))
+        return unit(np.array(list(M.to_3x3() @ local)))
+
+    def turn_hand_within(self, side, M, max_deg=25.0, step_deg=2.5):
+        """When the best elbow still leaves the wrist over its limit: the hand turned about its palm's normal through
+        its wrist (the palm stays on the mark's face), by the least angle that brings the wrist inside, at most
+        max_deg. Returns (the new M, degrees turned, the wrist after)."""
+        _E, wrist, _b, _u = self.best_elbow(side, M)
+        if wrist <= self.WRIST_MAX:
+            return M, 0.0, wrist
+        n = Vector(self.palm_normal_for(side, M).tolist())
+        pivot = M.translation.copy()
+        best = (wrist, M, 0.0)
+        for sgn in (1.0, -1.0):
+            for k in range(1, int(max_deg / step_deg) + 1):
+                a = sgn * k * step_deg
+                R = Matrix.Rotation(math.radians(a), 4, n)
+                M2 = Matrix.Translation(pivot) @ R @ Matrix.Translation(-pivot) @ M
+                _E2, w2, _b2, _u2 = self.best_elbow(side, M2)
+                if w2 < best[0]:
+                    best = (w2, M2, a)
+                if w2 <= self.WRIST_MAX:
+                    break
+            if best[0] <= self.WRIST_MAX:
+                break
+        return best[1], best[2], best[0]
+
     # --- a hand on a mark -----------------------------------------------------------------------------------------
     def hand_on(self, side, mark, kind):
         """The hand's world matrix and its starting finger turns for a preset on a mark."""
@@ -754,6 +893,10 @@ class FakePose:
             for n, q in fingers.items():
                 L.arm.pose.bones[n].rotation_quaternion = q
             bpy.context.view_layer.update()
+        turned, slid = 0.0, 0.0
+        if getattr(L, "_put_hand_unlimited", None) is not None:
+            H, slid = self.slide_within_reach(side, mark, H)
+            H, turned, _w = self.turn_hand_within(side, H)
         short = L._put_hand(side, H)
         key, p = self.preset(side, mark, kind)
         pushed = None
@@ -770,6 +913,7 @@ class FakePose:
                 curls[digit] = self.curl_to_contact(side, digit, r["target_deg"], other=bool(r.get("other_hand")))
         Hn = L._bw(L._n("hand", side)).copy()
         out = {"preset": src, "arm_short_cm": round(short, 2), "curls": curls, "pushed_out_cm": pushed,
+               "limits": dict(getattr(self, "last_limits", {}).get(side) or {}, hand_turned_deg=round(turned, 1), slid_back_cm=round(slid, 1)),
                "arm": {k: v for k, v in L._arm_report(side, L._limits()[0])[0].items()
                        if k in ("elbow_bend_deg", "wrist_bend_deg", "wrist_flexion_deg", "wrist_radial_deg")}}
         self.report["holds"]["%s:%s:%s" % (side, mark, kind)] = out

@@ -33,6 +33,34 @@ place. Rule 8 fails because fakepose reports anatomy and does not enforce it (th
 the market does it"); the bar was built under the anatomy walls, so meeting it needs the walls back in fakepose.
 That is a conflict between two decisions and is flagged to the owner before any change.
 
+## Run 2, 2026-10-26: joint limits in the IK, the rest hold from the bar, the roll about the bore
+
+The owner (2026-10-25): "go with the joint limits, then measure the AR15 again, then apply the fix list." Built:
+the elbow chosen on its IK circle where the wrist bends least (under the shoulder, inside its hinge); the hand turned
+on its palm's normal when no elbow keeps the wrist inside (at most 25 degrees, the hand stays on the mark); the
+support hold slid back along the bore to the arm's reach at rest; `idle_pull` set to the bar's rest hold; the check
+and charge roll 60 degrees about the bore line over the grip (the first try rolled about the grip and threw the
+rear sight 13 cm left: the game's handle moves 1 cm); a loading view that only rolls for magazine rifles; the ten
+rules measured on every eye-checked frame and judged in `hands.json` `pose_rules`.
+
+| # | Rule | Game AR-15 | fakepose AR15, run 2 | Result |
+|---|---|---|---|---|
+| 1 | bore parallel at rest | 0 / 0 / 0 | 0 / 0 / 0 | PASS |
+| 2 | rear sight at rest | [3.8, 13.1, -4.4] | [3.8, 13.1, -4.4] | PASS |
+| 3 | muzzle near the centre | [0.09, -0.19] | [0.05, -0.26] | PASS |
+| 4 | cover 10 to 20 % | 11 to 19 % | rest 7.2 %, aim 10.7 %, check 5 %, equip and run 0 | FAIL |
+| 5 | support hand on screen at rest | yes | [-0.03, -0.73] | PASS |
+| 6 | check and charge: roll 60, port to the eye | port 65 % visible | roll 60 about the bore, port 94 to 100 % visible, rear sight moves 5.5 cm left, 3 cm down (game: 1 cm, 3 cm) | PASS |
+| 7 | the pulling hand on screen | yes | 23 to 34 % of the frames | FAIL |
+| 8 | wrist 30, elbow 5 to 150, under the shoulder | kept | holds: grip 29.5, support 25.1 (slid 5 cm), handle 6.4, assist 28.5; rest and aim, walk, fire, reload_empty: at most 30.7; check and charge: right wrist 48 while rolled, reload: left 41.6, run 42, check_mag 35 | FAIL (rest passes; the rolled poses fail) |
+| 9 | zero clipping seen | 0 | 7 frames left after the fix (check 6: the left ring finger at 1.5 s, reload_empty 1) | FAIL |
+| 10 | targets and palms | yes | yes | PASS |
+
+6 of 10 pass (was 2). What the numbers say about the rest: the right wrist at 48 in the rolled check is the gun's
+roll turning the grip hand 60 degrees with it; a real shooter lets the gun roll in the hand or turns the forearm,
+and the hold does neither yet. The cover stays at 7 % with the pose matched to the bar's numbers: the difference is
+the arms' bulk and the model, not the gun's place; the bar's cover number carries the pack's thick sleeves.
+
 ## What fakepose must change to meet the bar
 
 1. `idle_pull`: replace 14 down / 6 right / -4 back / pitch -10 with the bar's rest hold: the rear sight at [4, 13, -4]
