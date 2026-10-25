@@ -1,0 +1,1408 @@
+{
+ "rig": "ar",
+ "fov": [
+  90.0,
+  1.7777777777777777
+ ],
+ "rows": [
+  {
+   "pose": "idle",
+   "gun": {
+    "yaw_left_deg": 0.0,
+    "pitch_up_deg": -0.0,
+    "roll_right_deg": 0.0,
+    "barrel_off_view_deg": 0.0
+   },
+   "screen": {
+    "muzzle": [
+     0.088,
+     -0.187
+    ],
+    "bore": [
+     0.333,
+     -0.703
+    ],
+    "stock": null,
+    "t_mark": [
+     0.287,
+     -0.59
+    ],
+    "port": [
+     0.381,
+     -0.557
+    ],
+    "hand_l": [
+     0.038,
+     -0.586
+    ],
+    "hand_r": [
+     1.513,
+     -3.976
+    ],
+    "lowerarm_l": [
+     -1.362,
+     -2.801
+    ],
+    "lowerarm_r": null
+   },
+   "view_cm": {
+    "muzzle": [
+     5.8,
+     65.3,
+     -6.9
+    ],
+    "bore": [
+     5.8,
+     17.3,
+     -6.9
+    ],
+    "stock": [
+     5.8,
+     -7.7,
+     -9.9
+    ],
+    "t_mark": [
+     3.8,
+     13.1,
+     -4.4
+    ],
+    "port": [
+     7.4,
+     19.3,
+     -6.1
+    ],
+    "hand_l": [
+     1.2,
+     31.8,
+     -10.5
+    ],
+    "hand_r": [
+     9.9,
+     6.6,
+     -14.7
+    ],
+    "lowerarm_l": [
+     -15.0,
+     11.0,
+     -17.4
+    ],
+    "lowerarm_r": [
+     14.0,
+     -20.4,
+     -14.9
+    ]
+   },
+   "port": {
+    "facing": -0.342,
+    "angle_from_square_deg": 110.0,
+    "distance_cm": 21.6
+   },
+   "port_visible": {
+    "visible": 0.0,
+    "samples": 17
+   },
+   "anatomy": {
+    "l": {
+     "ok": false,
+     "bad": [
+      "wrist bent 33 off the forearm (most 30)"
+     ],
+     "numbers": {
+      "elbow_below_shoulder_cm": 5.6,
+      "upper_arm_raised_deg": 78.0,
+      "elbow_bend_deg": 27.0,
+      "wrist_bend_deg": 33.0,
+      "wrist_flexion_deg": -29.0,
+      "wrist_radial_deg": 16.0
+     }
+    },
+    "r": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 25.7,
+      "upper_arm_raised_deg": 22.0,
+      "elbow_bend_deg": 101.0,
+      "wrist_bend_deg": 12.0,
+      "wrist_flexion_deg": -10.0,
+      "wrist_radial_deg": -7.0
+     }
+    }
+   },
+   "cover_share": 0.154,
+   "clip": "idle"
+  },
+  {
+   "pose": "check 0.00s",
+   "gun": {
+    "yaw_left_deg": 0.0,
+    "pitch_up_deg": -0.0,
+    "roll_right_deg": 0.0,
+    "barrel_off_view_deg": 0.0
+   },
+   "screen": {
+    "muzzle": [
+     0.088,
+     -0.187
+    ],
+    "bore": [
+     0.333,
+     -0.703
+    ],
+    "stock": null,
+    "t_mark": [
+     0.287,
+     -0.59
+    ],
+    "port": [
+     0.381,
+     -0.557
+    ],
+    "hand_l": [
+     0.038,
+     -0.586
+    ],
+    "hand_r": [
+     1.513,
+     -3.976
+    ],
+    "lowerarm_l": [
+     -1.362,
+     -2.801
+    ],
+    "lowerarm_r": null
+   },
+   "view_cm": {
+    "muzzle": [
+     5.8,
+     65.3,
+     -6.9
+    ],
+    "bore": [
+     5.8,
+     17.3,
+     -6.9
+    ],
+    "stock": [
+     5.8,
+     -7.7,
+     -9.9
+    ],
+    "t_mark": [
+     3.8,
+     13.1,
+     -4.4
+    ],
+    "port": [
+     7.4,
+     19.3,
+     -6.1
+    ],
+    "hand_l": [
+     1.2,
+     31.8,
+     -10.5
+    ],
+    "hand_r": [
+     9.9,
+     6.6,
+     -14.7
+    ],
+    "lowerarm_l": [
+     -15.0,
+     11.0,
+     -17.4
+    ],
+    "lowerarm_r": [
+     14.4,
+     -20.3,
+     -14.7
+    ]
+   },
+   "port": {
+    "facing": -0.342,
+    "angle_from_square_deg": 110.0,
+    "distance_cm": 21.6
+   },
+   "port_visible": {
+    "visible": 0.0,
+    "samples": 17
+   },
+   "anatomy": {
+    "l": {
+     "ok": false,
+     "bad": [
+      "wrist bent 33 off the forearm (most 30)"
+     ],
+     "numbers": {
+      "elbow_below_shoulder_cm": 5.6,
+      "upper_arm_raised_deg": 78.0,
+      "elbow_bend_deg": 27.0,
+      "wrist_bend_deg": 33.0,
+      "wrist_flexion_deg": -29.0,
+      "wrist_radial_deg": 16.0
+     }
+    },
+    "r": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 25.6,
+      "upper_arm_raised_deg": 23.0,
+      "elbow_bend_deg": 101.0,
+      "wrist_bend_deg": 13.0,
+      "wrist_flexion_deg": -11.0,
+      "wrist_radial_deg": -7.0
+     }
+    }
+   },
+   "cover_share": 0.154,
+   "clip": "check",
+   "t": 0.0,
+   "length": 2.667
+  },
+  {
+   "pose": "check 0.67s",
+   "gun": {
+    "yaw_left_deg": -0.0,
+    "pitch_up_deg": 0.0,
+    "roll_right_deg": -60.0,
+    "barrel_off_view_deg": 0.0
+   },
+   "screen": {
+    "muzzle": [
+     0.088,
+     -0.187
+    ],
+    "bore": [
+     0.333,
+     -0.703
+    ],
+    "stock": null,
+    "t_mark": [
+     0.198,
+     -0.994
+    ],
+    "port": [
+     0.304,
+     -0.467
+    ],
+    "hand_l": [
+     -0.372,
+     -1.913
+    ],
+    "hand_r": [
+     2.227,
+     -1.943
+    ],
+    "lowerarm_l": [
+     -11.584,
+     -32.166
+    ],
+    "lowerarm_r": null
+   },
+   "view_cm": {
+    "muzzle": [
+     5.8,
+     65.3,
+     -6.9
+    ],
+    "bore": [
+     5.8,
+     17.3,
+     -6.9
+    ],
+    "stock": [
+     8.4,
+     -7.7,
+     -8.4
+    ],
+    "t_mark": [
+     2.6,
+     13.1,
+     -7.3
+    ],
+    "port": [
+     5.9,
+     19.3,
+     -5.1
+    ],
+    "hand_l": [
+     -6.4,
+     17.2,
+     -18.5
+    ],
+    "hand_r": [
+     14.6,
+     6.6,
+     -7.2
+    ],
+    "lowerarm_l": [
+     -22.2,
+     1.9,
+     -34.6
+    ],
+    "lowerarm_r": [
+     18.4,
+     -19.8,
+     -12.8
+    ]
+   },
+   "port": {
+    "facing": 0.07,
+    "angle_from_square_deg": 86.0,
+    "distance_cm": 20.8
+   },
+   "port_visible": {
+    "visible": 0.647,
+    "samples": 17
+   },
+   "anatomy": {
+    "l": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 22.8,
+      "upper_arm_raised_deg": 35.0,
+      "elbow_bend_deg": 93.0,
+      "wrist_bend_deg": 4.0,
+      "wrist_flexion_deg": -3.0,
+      "wrist_radial_deg": 2.0
+     }
+    },
+    "r": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 23.6,
+      "upper_arm_raised_deg": 32.0,
+      "elbow_bend_deg": 111.0,
+      "wrist_bend_deg": 20.0,
+      "wrist_flexion_deg": 5.0,
+      "wrist_radial_deg": -19.0
+     }
+    }
+   },
+   "cover_share": 0.147,
+   "clip": "check",
+   "t": 0.667,
+   "length": 2.667
+  },
+  {
+   "pose": "check 1.33s",
+   "gun": {
+    "yaw_left_deg": -0.0,
+    "pitch_up_deg": 0.0,
+    "roll_right_deg": -60.0,
+    "barrel_off_view_deg": 0.0
+   },
+   "screen": {
+    "muzzle": [
+     0.088,
+     -0.187
+    ],
+    "bore": [
+     0.333,
+     -0.703
+    ],
+    "stock": null,
+    "t_mark": [
+     0.198,
+     -0.994
+    ],
+    "port": [
+     0.304,
+     -0.467
+    ],
+    "hand_l": [
+     -0.476,
+     -5.801
+    ],
+    "hand_r": [
+     2.227,
+     -1.943
+    ],
+    "lowerarm_l": null,
+    "lowerarm_r": null
+   },
+   "view_cm": {
+    "muzzle": [
+     5.8,
+     65.3,
+     -6.9
+    ],
+    "bore": [
+     5.8,
+     17.3,
+     -6.9
+    ],
+    "stock": [
+     8.4,
+     -7.7,
+     -8.4
+    ],
+    "t_mark": [
+     2.6,
+     13.1,
+     -7.3
+    ],
+    "port": [
+     5.9,
+     19.3,
+     -5.1
+    ],
+    "hand_l": [
+     -2.8,
+     5.8,
+     -19.0
+    ],
+    "hand_r": [
+     14.6,
+     6.6,
+     -7.2
+    ],
+    "lowerarm_l": [
+     -20.5,
+     -4.3,
+     -37.0
+    ],
+    "lowerarm_r": [
+     18.4,
+     -19.8,
+     -12.8
+    ]
+   },
+   "port": {
+    "facing": 0.07,
+    "angle_from_square_deg": 86.0,
+    "distance_cm": 20.8
+   },
+   "port_visible": {
+    "visible": 0.647,
+    "samples": 17
+   },
+   "anatomy": {
+    "l": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 25.2,
+      "upper_arm_raised_deg": 25.0,
+      "elbow_bend_deg": 107.0,
+      "wrist_bend_deg": 0.0,
+      "wrist_flexion_deg": 0.0,
+      "wrist_radial_deg": 0.0
+     }
+    },
+    "r": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 23.6,
+      "upper_arm_raised_deg": 32.0,
+      "elbow_bend_deg": 111.0,
+      "wrist_bend_deg": 20.0,
+      "wrist_flexion_deg": 5.0,
+      "wrist_radial_deg": -19.0
+     }
+    }
+   },
+   "cover_share": 0.109,
+   "clip": "check",
+   "t": 1.333,
+   "length": 2.667
+  },
+  {
+   "pose": "check 2.00s",
+   "gun": {
+    "yaw_left_deg": -0.0,
+    "pitch_up_deg": 0.0,
+    "roll_right_deg": -60.0,
+    "barrel_off_view_deg": 0.0
+   },
+   "screen": {
+    "muzzle": [
+     0.088,
+     -0.187
+    ],
+    "bore": [
+     0.333,
+     -0.703
+    ],
+    "stock": null,
+    "t_mark": [
+     0.198,
+     -0.994
+    ],
+    "port": [
+     0.304,
+     -0.467
+    ],
+    "hand_l": [
+     -0.279,
+     -2.148
+    ],
+    "hand_r": [
+     2.227,
+     -1.943
+    ],
+    "lowerarm_l": [
+     -20.138,
+     -60.471
+    ],
+    "lowerarm_r": null
+   },
+   "view_cm": {
+    "muzzle": [
+     5.8,
+     65.3,
+     -6.9
+    ],
+    "bore": [
+     5.8,
+     17.3,
+     -6.9
+    ],
+    "stock": [
+     8.4,
+     -7.7,
+     -8.4
+    ],
+    "t_mark": [
+     2.6,
+     13.1,
+     -7.3
+    ],
+    "port": [
+     5.9,
+     19.3,
+     -5.1
+    ],
+    "hand_l": [
+     -4.1,
+     14.6,
+     -17.7
+    ],
+    "hand_r": [
+     14.6,
+     6.6,
+     -7.2
+    ],
+    "lowerarm_l": [
+     -20.5,
+     1.0,
+     -34.6
+    ],
+    "lowerarm_r": [
+     18.4,
+     -19.8,
+     -12.8
+    ]
+   },
+   "port": {
+    "facing": 0.07,
+    "angle_from_square_deg": 86.0,
+    "distance_cm": 20.8
+   },
+   "port_visible": {
+    "visible": 0.647,
+    "samples": 17
+   },
+   "anatomy": {
+    "l": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 22.8,
+      "upper_arm_raised_deg": 35.0,
+      "elbow_bend_deg": 95.0,
+      "wrist_bend_deg": 5.0,
+      "wrist_flexion_deg": -5.0,
+      "wrist_radial_deg": 2.0
+     }
+    },
+    "r": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 23.6,
+      "upper_arm_raised_deg": 32.0,
+      "elbow_bend_deg": 111.0,
+      "wrist_bend_deg": 20.0,
+      "wrist_flexion_deg": 5.0,
+      "wrist_radial_deg": -19.0
+     }
+    }
+   },
+   "cover_share": 0.142,
+   "clip": "check",
+   "t": 2.0,
+   "length": 2.667
+  },
+  {
+   "pose": "check 2.67s",
+   "gun": {
+    "yaw_left_deg": 0.0,
+    "pitch_up_deg": -0.0,
+    "roll_right_deg": 0.0,
+    "barrel_off_view_deg": 0.0
+   },
+   "screen": {
+    "muzzle": [
+     0.088,
+     -0.187
+    ],
+    "bore": [
+     0.333,
+     -0.703
+    ],
+    "stock": null,
+    "t_mark": [
+     0.287,
+     -0.59
+    ],
+    "port": [
+     0.381,
+     -0.557
+    ],
+    "hand_l": [
+     0.038,
+     -0.586
+    ],
+    "hand_r": [
+     1.513,
+     -3.976
+    ],
+    "lowerarm_l": [
+     -1.362,
+     -2.801
+    ],
+    "lowerarm_r": null
+   },
+   "view_cm": {
+    "muzzle": [
+     5.8,
+     65.3,
+     -6.9
+    ],
+    "bore": [
+     5.8,
+     17.3,
+     -6.9
+    ],
+    "stock": [
+     5.8,
+     -7.7,
+     -9.9
+    ],
+    "t_mark": [
+     3.8,
+     13.1,
+     -4.4
+    ],
+    "port": [
+     7.4,
+     19.3,
+     -6.1
+    ],
+    "hand_l": [
+     1.2,
+     31.8,
+     -10.5
+    ],
+    "hand_r": [
+     9.9,
+     6.6,
+     -14.7
+    ],
+    "lowerarm_l": [
+     -15.0,
+     11.0,
+     -17.4
+    ],
+    "lowerarm_r": [
+     14.4,
+     -20.3,
+     -14.7
+    ]
+   },
+   "port": {
+    "facing": -0.342,
+    "angle_from_square_deg": 110.0,
+    "distance_cm": 21.6
+   },
+   "port_visible": {
+    "visible": 0.0,
+    "samples": 17
+   },
+   "anatomy": {
+    "l": {
+     "ok": false,
+     "bad": [
+      "wrist bent 33 off the forearm (most 30)"
+     ],
+     "numbers": {
+      "elbow_below_shoulder_cm": 5.6,
+      "upper_arm_raised_deg": 78.0,
+      "elbow_bend_deg": 27.0,
+      "wrist_bend_deg": 33.0,
+      "wrist_flexion_deg": -29.0,
+      "wrist_radial_deg": 16.0
+     }
+    },
+    "r": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 25.6,
+      "upper_arm_raised_deg": 23.0,
+      "elbow_bend_deg": 101.0,
+      "wrist_bend_deg": 13.0,
+      "wrist_flexion_deg": -11.0,
+      "wrist_radial_deg": -7.0
+     }
+    }
+   },
+   "cover_share": 0.154,
+   "clip": "check",
+   "t": 2.667,
+   "length": 2.667
+  },
+  {
+   "pose": "charge 0.00s",
+   "gun": {
+    "yaw_left_deg": 0.0,
+    "pitch_up_deg": -0.0,
+    "roll_right_deg": 0.0,
+    "barrel_off_view_deg": 0.0
+   },
+   "screen": {
+    "muzzle": [
+     0.088,
+     -0.187
+    ],
+    "bore": [
+     0.333,
+     -0.703
+    ],
+    "stock": null,
+    "t_mark": [
+     0.287,
+     -0.59
+    ],
+    "port": [
+     0.381,
+     -0.557
+    ],
+    "hand_l": [
+     0.038,
+     -0.586
+    ],
+    "hand_r": [
+     1.513,
+     -3.976
+    ],
+    "lowerarm_l": [
+     -1.362,
+     -2.801
+    ],
+    "lowerarm_r": null
+   },
+   "view_cm": {
+    "muzzle": [
+     5.8,
+     65.3,
+     -6.9
+    ],
+    "bore": [
+     5.8,
+     17.3,
+     -6.9
+    ],
+    "stock": [
+     5.8,
+     -7.7,
+     -9.9
+    ],
+    "t_mark": [
+     3.8,
+     13.1,
+     -4.4
+    ],
+    "port": [
+     7.4,
+     19.3,
+     -6.1
+    ],
+    "hand_l": [
+     1.2,
+     31.8,
+     -10.5
+    ],
+    "hand_r": [
+     9.9,
+     6.6,
+     -14.7
+    ],
+    "lowerarm_l": [
+     -15.0,
+     11.0,
+     -17.4
+    ],
+    "lowerarm_r": [
+     14.4,
+     -20.3,
+     -14.7
+    ]
+   },
+   "port": {
+    "facing": -0.342,
+    "angle_from_square_deg": 110.0,
+    "distance_cm": 21.6
+   },
+   "port_visible": {
+    "visible": 0.0,
+    "samples": 17
+   },
+   "anatomy": {
+    "l": {
+     "ok": false,
+     "bad": [
+      "wrist bent 33 off the forearm (most 30)"
+     ],
+     "numbers": {
+      "elbow_below_shoulder_cm": 5.6,
+      "upper_arm_raised_deg": 78.0,
+      "elbow_bend_deg": 27.0,
+      "wrist_bend_deg": 33.0,
+      "wrist_flexion_deg": -29.0,
+      "wrist_radial_deg": 16.0
+     }
+    },
+    "r": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 25.6,
+      "upper_arm_raised_deg": 23.0,
+      "elbow_bend_deg": 101.0,
+      "wrist_bend_deg": 13.0,
+      "wrist_flexion_deg": -11.0,
+      "wrist_radial_deg": -7.0
+     }
+    }
+   },
+   "cover_share": 0.154,
+   "clip": "charge",
+   "t": 0.0,
+   "length": 1.867
+  },
+  {
+   "pose": "charge 0.47s",
+   "gun": {
+    "yaw_left_deg": -0.0,
+    "pitch_up_deg": 0.0,
+    "roll_right_deg": -60.0,
+    "barrel_off_view_deg": 0.0
+   },
+   "screen": {
+    "muzzle": [
+     0.088,
+     -0.187
+    ],
+    "bore": [
+     0.333,
+     -0.703
+    ],
+    "stock": null,
+    "t_mark": [
+     0.198,
+     -0.994
+    ],
+    "port": [
+     0.304,
+     -0.467
+    ],
+    "hand_l": [
+     -0.281,
+     -0.868
+    ],
+    "hand_r": [
+     2.227,
+     -1.943
+    ],
+    "lowerarm_l": [
+     -2.53,
+     -6.178
+    ],
+    "lowerarm_r": null
+   },
+   "view_cm": {
+    "muzzle": [
+     5.8,
+     65.3,
+     -6.9
+    ],
+    "bore": [
+     5.8,
+     17.3,
+     -6.9
+    ],
+    "stock": [
+     8.4,
+     -7.7,
+     -8.4
+    ],
+    "t_mark": [
+     2.6,
+     13.1,
+     -7.3
+    ],
+    "port": [
+     5.9,
+     19.3,
+     -5.1
+    ],
+    "hand_l": [
+     -7.1,
+     25.3,
+     -12.3
+    ],
+    "hand_r": [
+     14.6,
+     6.6,
+     -7.2
+    ],
+    "lowerarm_l": [
+     -20.8,
+     8.2,
+     -28.6
+    ],
+    "lowerarm_r": [
+     18.4,
+     -19.8,
+     -12.8
+    ]
+   },
+   "port": {
+    "facing": 0.07,
+    "angle_from_square_deg": 86.0,
+    "distance_cm": 20.8
+   },
+   "port_visible": {
+    "visible": 0.647,
+    "samples": 17
+   },
+   "anatomy": {
+    "l": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 16.8,
+      "upper_arm_raised_deg": 53.0,
+      "elbow_bend_deg": 75.0,
+      "wrist_bend_deg": 18.0,
+      "wrist_flexion_deg": -16.0,
+      "wrist_radial_deg": 9.0
+     }
+    },
+    "r": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 23.6,
+      "upper_arm_raised_deg": 32.0,
+      "elbow_bend_deg": 111.0,
+      "wrist_bend_deg": 20.0,
+      "wrist_flexion_deg": 5.0,
+      "wrist_radial_deg": -19.0
+     }
+    }
+   },
+   "cover_share": 0.187,
+   "clip": "charge",
+   "t": 0.467,
+   "length": 1.867
+  },
+  {
+   "pose": "charge 0.93s",
+   "gun": {
+    "yaw_left_deg": -0.0,
+    "pitch_up_deg": 0.0,
+    "roll_right_deg": -60.0,
+    "barrel_off_view_deg": 0.0
+   },
+   "screen": {
+    "muzzle": [
+     0.088,
+     -0.187
+    ],
+    "bore": [
+     0.333,
+     -0.703
+    ],
+    "stock": null,
+    "t_mark": [
+     0.198,
+     -0.994
+    ],
+    "port": [
+     0.304,
+     -0.467
+    ],
+    "hand_l": [
+     -0.768,
+     -9.241
+    ],
+    "hand_r": [
+     2.227,
+     -1.943
+    ],
+    "lowerarm_l": null,
+    "lowerarm_r": null
+   },
+   "view_cm": {
+    "muzzle": [
+     5.8,
+     65.3,
+     -6.9
+    ],
+    "bore": [
+     5.8,
+     17.3,
+     -6.9
+    ],
+    "stock": [
+     8.4,
+     -7.7,
+     -8.4
+    ],
+    "t_mark": [
+     2.6,
+     13.1,
+     -7.3
+    ],
+    "port": [
+     5.9,
+     19.3,
+     -5.1
+    ],
+    "hand_l": [
+     -2.8,
+     3.7,
+     -19.0
+    ],
+    "hand_r": [
+     14.6,
+     6.6,
+     -7.2
+    ],
+    "lowerarm_l": [
+     -20.7,
+     -5.5,
+     -37.4
+    ],
+    "lowerarm_r": [
+     18.4,
+     -19.8,
+     -12.8
+    ]
+   },
+   "port": {
+    "facing": 0.07,
+    "angle_from_square_deg": 86.0,
+    "distance_cm": 20.8
+   },
+   "port_visible": {
+    "visible": 0.647,
+    "samples": 17
+   },
+   "anatomy": {
+    "l": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 25.6,
+      "upper_arm_raised_deg": 23.0,
+      "elbow_bend_deg": 110.0,
+      "wrist_bend_deg": 0.0,
+      "wrist_flexion_deg": 0.0,
+      "wrist_radial_deg": 0.0
+     }
+    },
+    "r": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 23.6,
+      "upper_arm_raised_deg": 32.0,
+      "elbow_bend_deg": 111.0,
+      "wrist_bend_deg": 20.0,
+      "wrist_flexion_deg": 5.0,
+      "wrist_radial_deg": -19.0
+     }
+    }
+   },
+   "cover_share": 0.109,
+   "clip": "charge",
+   "t": 0.933,
+   "length": 1.867
+  },
+  {
+   "pose": "charge 1.40s",
+   "gun": {
+    "yaw_left_deg": -0.0,
+    "pitch_up_deg": 0.0,
+    "roll_right_deg": -60.0,
+    "barrel_off_view_deg": 0.0
+   },
+   "screen": {
+    "muzzle": [
+     0.088,
+     -0.187
+    ],
+    "bore": [
+     0.333,
+     -0.703
+    ],
+    "stock": null,
+    "t_mark": [
+     0.198,
+     -0.994
+    ],
+    "port": [
+     0.304,
+     -0.467
+    ],
+    "hand_l": [
+     -0.178,
+     -0.573
+    ],
+    "hand_r": [
+     2.227,
+     -1.943
+    ],
+    "lowerarm_l": [
+     -1.76,
+     -3.867
+    ],
+    "lowerarm_r": null
+   },
+   "view_cm": {
+    "muzzle": [
+     5.8,
+     65.3,
+     -6.9
+    ],
+    "bore": [
+     5.8,
+     17.3,
+     -6.9
+    ],
+    "stock": [
+     8.4,
+     -7.7,
+     -8.4
+    ],
+    "t_mark": [
+     2.6,
+     13.1,
+     -7.3
+    ],
+    "port": [
+     5.9,
+     19.3,
+     -5.1
+    ],
+    "hand_l": [
+     -5.3,
+     29.8,
+     -9.6
+    ],
+    "hand_r": [
+     14.6,
+     6.6,
+     -7.2
+    ],
+    "lowerarm_l": [
+     -19.0,
+     10.8,
+     -23.5
+    ],
+    "lowerarm_r": [
+     18.4,
+     -19.8,
+     -12.8
+    ]
+   },
+   "port": {
+    "facing": 0.07,
+    "angle_from_square_deg": 86.0,
+    "distance_cm": 20.8
+   },
+   "port_visible": {
+    "visible": 0.647,
+    "samples": 17
+   },
+   "anatomy": {
+    "l": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 11.7,
+      "upper_arm_raised_deg": 65.0,
+      "elbow_bend_deg": 57.0,
+      "wrist_bend_deg": 28.0,
+      "wrist_flexion_deg": -24.0,
+      "wrist_radial_deg": 13.0
+     }
+    },
+    "r": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 23.6,
+      "upper_arm_raised_deg": 32.0,
+      "elbow_bend_deg": 111.0,
+      "wrist_bend_deg": 20.0,
+      "wrist_flexion_deg": 5.0,
+      "wrist_radial_deg": -19.0
+     }
+    }
+   },
+   "cover_share": 0.184,
+   "clip": "charge",
+   "t": 1.4,
+   "length": 1.867
+  },
+  {
+   "pose": "charge 1.87s",
+   "gun": {
+    "yaw_left_deg": 0.0,
+    "pitch_up_deg": -0.0,
+    "roll_right_deg": 0.0,
+    "barrel_off_view_deg": 0.0
+   },
+   "screen": {
+    "muzzle": [
+     0.088,
+     -0.187
+    ],
+    "bore": [
+     0.333,
+     -0.703
+    ],
+    "stock": null,
+    "t_mark": [
+     0.287,
+     -0.59
+    ],
+    "port": [
+     0.381,
+     -0.557
+    ],
+    "hand_l": [
+     0.038,
+     -0.586
+    ],
+    "hand_r": [
+     1.513,
+     -3.976
+    ],
+    "lowerarm_l": [
+     -1.362,
+     -2.801
+    ],
+    "lowerarm_r": null
+   },
+   "view_cm": {
+    "muzzle": [
+     5.8,
+     65.3,
+     -6.9
+    ],
+    "bore": [
+     5.8,
+     17.3,
+     -6.9
+    ],
+    "stock": [
+     5.8,
+     -7.7,
+     -9.9
+    ],
+    "t_mark": [
+     3.8,
+     13.1,
+     -4.4
+    ],
+    "port": [
+     7.4,
+     19.3,
+     -6.1
+    ],
+    "hand_l": [
+     1.2,
+     31.8,
+     -10.5
+    ],
+    "hand_r": [
+     9.9,
+     6.6,
+     -14.7
+    ],
+    "lowerarm_l": [
+     -15.0,
+     11.0,
+     -17.4
+    ],
+    "lowerarm_r": [
+     14.4,
+     -20.3,
+     -14.7
+    ]
+   },
+   "port": {
+    "facing": -0.342,
+    "angle_from_square_deg": 110.0,
+    "distance_cm": 21.6
+   },
+   "port_visible": {
+    "visible": 0.0,
+    "samples": 17
+   },
+   "anatomy": {
+    "l": {
+     "ok": false,
+     "bad": [
+      "wrist bent 33 off the forearm (most 30)"
+     ],
+     "numbers": {
+      "elbow_below_shoulder_cm": 5.6,
+      "upper_arm_raised_deg": 78.0,
+      "elbow_bend_deg": 27.0,
+      "wrist_bend_deg": 33.0,
+      "wrist_flexion_deg": -29.0,
+      "wrist_radial_deg": 16.0
+     }
+    },
+    "r": {
+     "ok": true,
+     "bad": [],
+     "numbers": {
+      "elbow_below_shoulder_cm": 25.6,
+      "upper_arm_raised_deg": 23.0,
+      "elbow_bend_deg": 101.0,
+      "wrist_bend_deg": 13.0,
+      "wrist_flexion_deg": -11.0,
+      "wrist_radial_deg": -7.0
+     }
+    }
+   },
+   "cover_share": 0.154,
+   "clip": "charge",
+   "t": 1.867,
+   "length": 1.867
+  }
+ ]
+}
