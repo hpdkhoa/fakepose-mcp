@@ -132,19 +132,19 @@
    "fingers": {}
   },
   "l:handle": {
-   "source": "authored 2026-10-26 (the owner: author the pinch through the gate): the left hand over the receiver's rear, palm down, the fingers pointing right across the gun; the index pad on top of the charging handle's left wing and the thumb under it, the T pinched from both sides; the hand reaches until the pinch's middle sits on the wing",
+   "source": "authored 2026-10-26 (the owner: author the pinch through the gate), second shape: the left hand over the receiver's rear, palm down, the fingers pointing forward along the gun; the index hooks the charging handle's left wing from the front with its end joints and pulls, the thumb lies on the receiver's top beside the handle (a real charge hooks the latch, the thumb rests on the receiver); the first shape (fingers across, the T pinched from both sides) left the thumb 6.5 cm in the air; the fingers start hooked (start_curl) so the reach lands the palm by the latch, not 9 cm behind it over the stock",
    "contact": "pinch",
    "palm_into": {
     "up": -1.0
    },
    "fingers_toward": {
-    "left": -1.0,
-    "forward": 0.2
+    "forward": 1.0,
+    "left": -0.15
    },
    "offset_cm": {
     "left": 2.2,
-    "up": 0.2,
-    "forward": 0.0
+    "up": 0.3,
+    "forward": -1.0
    },
    "standoff_cm": 0.0,
    "reach_mark": true,
@@ -175,6 +175,28 @@
      "target_deg": "fist",
      "other_hand": false
     }
+   },
+   "start_curl": {
+    "index": [
+     20.0,
+     70.0,
+     40.0
+    ],
+    "middle": [
+     30.0,
+     80.0,
+     40.0
+    ],
+    "ring": [
+     40.0,
+     80.0,
+     40.0
+    ],
+    "pinky": [
+     40.0,
+     80.0,
+     40.0
+    ]
    }
   },
   "l:assist": {

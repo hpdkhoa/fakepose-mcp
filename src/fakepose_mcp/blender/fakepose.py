@@ -986,6 +986,41 @@ class FakePose:
             return out
         return dist
 
+    def set_curl(self, side, digit, degs):
+        """A finger's three joints bent by degs (toward the palm, degrees, from where they are): the shape a hold
+        starts from (a hook before a pull reaches its latch), with curl_to_contact's hinges and signs."""
+        L = self.L
+        names = [L._n("finger", side, digit, j) for j in ("01", "02", "03")]
+        base = [L._bw(n).copy() for n in names]
+        FL = L._limits()[1]
+        if digit == "thumb":
+            hinge = [L._thumb_report(side, L._thumb_limits())[2].get(j) for j in ("01", "02", "03")]
+            hinge = [np.array(list(h)) if h is not None else None for h in hinge]
+        else:
+            hinge = [np.array(list(L._finger_report(side, FL)[2][digit]))] * 3
+        sign = []
+        for j, n in enumerate(names):
+            if hinge[j] is None:
+                sign.append(0.0)
+                continue
+            f0 = np.array(list(L._palm_facing(side)))
+            tip0 = np.array(list(L._finger_tip(digit, side) if digit != "thumb" else L._anchor(side, "thumb_tip")))
+            L._turn_about(n, Vector(list(hinge[j])), 5.0, base[j].translation)
+            tip1 = np.array(list(L._finger_tip(digit, side) if digit != "thumb" else L._anchor(side, "thumb_tip")))
+            sign.append(1.0 if float((tip1 - tip0) @ f0) > 0.0 else -1.0)
+            for n_, M_ in zip(names, base):
+                L._set_world(n_, M_)
+        for j, n in enumerate(names):
+            if hinge[j] is None or abs(float(degs[j])) < 1e-9:
+                continue
+            h = Vector(list(hinge[j]))
+            for i in range(j):
+                if hinge[i] is not None:
+                    h = Matrix.Rotation(math.radians(sign[i] * float(degs[i])), 3, Vector(list(hinge[i]))) @ h
+            L._turn_about(n, h, sign[j] * float(degs[j]), L._bw(n).translation.copy())
+        bpy.context.view_layer.update()
+        return [round(float(d), 1) for d in degs]
+
     def curl_to_contact(self, side, digit, target, other=False, steps=24):
         """A digit closed the way games do it: every joint turned together from where it is toward its target bend
         (target: the three joints' bends, degrees, added to the open pose), in equal steps; a segment that touches
@@ -1374,6 +1409,13 @@ class FakePose:
             H, turned, _w = self.turn_hand_within(side, H)
         _cap = self.presets.get("captured", {}).get("%s:%s" % (side, mark)) or {}
         _pre = self.preset(side, mark, kind)[1] or {}
+        start_curl = dict(_pre.get("start_curl") or {}, **(tune.get("start_curl") or {}))
+        if start_curl:
+            # the hold's starting shape (a hook before the reach: the pad close under the palm, so the palm lands by
+            # the part, not a straight finger's length behind it)
+            L._put_hand(side, H)
+            for dg, degs in start_curl.items():
+                L.set_curl(side, dg, degs) if hasattr(L, "set_curl") else self.set_curl(side, dg, degs)
         if _cap.get("reach_mark") or _pre.get("reach_mark"):
             H, _mv, _gap = self.reach_mark(side, mark, H)
             reached = {"moved_cm": _mv, "pad_gap_cm": _gap}
