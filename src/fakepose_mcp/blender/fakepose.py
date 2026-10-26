@@ -536,7 +536,7 @@ class FakePose:
         """The hand's world matrix and its starting finger turns for a preset on a mark."""
         L, gk = self.L, self.gk
         cap = self.presets.get("captured", {}).get("%s:%s" % (side, mark))
-        if cap is not None and kind in ("palm", None):
+        if cap is not None and kind in ("palm", None, cap.get("kind")):
             rel = Matrix(cap["rel_to_mark_bone"])
             H = gk["bone_world"](gk["mark_bone"](mark)) @ rel
             return H, {n: tuple(q) for n, q in cap["fingers"].items()}, "captured: " + cap["source"]

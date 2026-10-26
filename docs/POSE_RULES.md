@@ -144,6 +144,26 @@ Left: the cover (the arms sit at the bar's stations, and still fill 6 % against 
 and model bulk), the pulling hand's station at the charging handle (the authored pinch sits lower than the game's),
 and 2 clipping frames in the empty reload.
 
+## Run 6, 2026-10-26: the handle pinch from the bar, the transit set-back
+
+The owner (2026-10-26): "continue optimize". Built: the charging-handle pinch captured from the game's charge clip
+at the pull (the left knuckle nearest the handle: 0.82 s, 5.4 cm; the hand 14.6 cm left of the gun's centre line,
+pinching the handle's left wing beside the receiver), the bar's fingers kept (a pinch finds nothing to close on); a
+hand in transit may be set back up to 8 cm when the eye sees it clip (the two empty-reload frames were a transit
+capped at 4 cm, 2.5 cm deep); captured holds may carry a kind.
+
+| # | Rule | Game AR-15 | fakepose AR15, run 6 | Result |
+|---|---|---|---|---|
+| 1 to 3, 5, 6, 10 | | | as run 5 | PASS |
+| 4 | cover 10 to 20 % | 11 to 19 % | aim 8.3, idle 5.9, check 4.4 (least per clip) | FAIL |
+| 7 | pulling hand on screen | on screen in the approach (charge 0.47 s), off screen at the pull's end (0.93 s: the hand 3.7 cm ahead of the eye, 19 cm under) | on screen 19 to 24 % of the frames; at the pull [-7.0, 0.4, -21.9], as the game's | FAIL as written; the bar itself has the hand off screen at the pull |
+| 8 | joints | kept | every gun clip: left wrist 3 to 30, left elbow 17 to 121, right wrist 12 to 23, elbows 2 cm under the shoulder; handle hold wrist 2, elbow 121 | PASS |
+| 9 | zero clipping | 0 | 0 on 1,178 frames | PASS |
+
+8 of 10. The two left: the cover (the arms sit at the bar's stations; the pack's sleeves and model fill the game's
+view), and rule 7, whose bar value came from the approach, not the pull: to re-measure on the game's clip before it
+counts.
+
 ## What fakepose must change to meet the bar
 
 1. `idle_pull`: replace 14 down / 6 right / -4 back / pitch -10 with the bar's rest hold: the rear sight at [4, 13, -4]
