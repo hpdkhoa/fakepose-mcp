@@ -693,6 +693,11 @@ class FakePose:
             for d in before["in_gun"]["digits"]:
                 if d == "thumb":
                     fixed.append({"thumb_cleared": self.thumb_clear(side)})
+                    if min(self._gaps(side, "thumb", None)) < -self.glove - 0.3:
+                        # the base swing could not lift it (a tip through the stock behind a charging handle): the
+                        # thumb's joints open to straight, then it lays back on the gun
+                        fixed.append({"thumb_opened": self.open_to_clear(side, "thumb", max_deg=90.0)})
+                        fixed.append({"thumb_laid": self.thumb_toward_gun(side, max_deg=60.0)})
                     continue
                 fixed.append({d + "_opened": self.open_to_clear(side, d, max_deg=90.0)})
                 r = rules.get(d)

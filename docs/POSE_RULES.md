@@ -346,3 +346,24 @@ degree. The M16A2's four holds: see run 15.
 The cup's thumb base setter now lowers each reading on its own axis (it had stalled at palm 29 asked 5); the AR15 cup
 re-judged with it: PASS (thumb -0.07, palm 5). Eight of eight holds pass on the two guns. Pictures:
 `K:/Projects/Claude/cc/report/tune/{AR15,M16A2}_grip_full_rule.png`, `M16A2_cup_full_rule.png`.
+
+### Run 16 (2026-10-27): the full AR15 clip run against the hold-only runs
+
+The full run (every clip) judged the handle pinch FAIL (thumb 0.83 cm inside) where the hold-only run passed: the
+pinch started from the bolt catch's hand (the clip before it), not the open hand. Fixed: every fakepose hold starts
+from the open hand (the market way: a hold does not depend on the hold before it). The fifth hold, the bolt catch
+(reload_empty), authored through the gate: the thumb beside the index in the palm's plane, the fingers forward and
+up (straight up bent the wrist 34 to 37): PASS, thumb 0.14, index -0.08, middle -0.27, ring 0.03, pinky 0.19; wrist
+10, elbow 91. The full run is being repeated; its rule 11 line is the number that counts.
+
+### Run 17 (2026-10-27): the full clip runs, both guns
+
+| Gun | Rule 11 (every hold's gate) | Clipping seen from the eye | Rules passed | Open |
+|---|---|---|---|---|
+| AR15 | PASS: grip, handguard, bolt catch, charging handle, magazine cup | 0 frames of 1,178 (12 clips) | 9 of 11 | 4 cover 3 to 9 % (bar 10 to 20); 7 pulling hand on screen 19 / 30 % (bar 44 / 58) |
+| M16A2 | PASS: the same five holds | 0 frames of 997 | 7 of 11 | 4 cover 4 to 8 %; 6 port 53 % under the carry handle (bar 60); 7 hand on screen 16 / 18 %; 8 the left elbow locks to 2.2 degrees in one clip (wall: 5 to 150); the clip is not named by the report yet |
+
+Fixes on the way: the M16A2 handle pinch failed in the full run (the thumb's tip 2 cm inside the stock, the base
+swing could not lift it): the gate now opens such a thumb to straight and lays it back; the handle preset's thumb
+starts straight beside the index (thumb_base 30/10). The owner's rule holds: a hold is not shown without its gate
+numbers; rule 8's elbow lock on the M16A2 is a wall break reported, not tuned through.

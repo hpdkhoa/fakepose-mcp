@@ -154,7 +154,7 @@
    }
   },
   "l:handle": {
-   "source": "authored 2026-10-26 (the owner: author the pinch through the gate), second shape: the left hand over the receiver's rear, palm down, the fingers pointing forward along the gun; the index hooks the charging handle's left wing from the front with its end joints and pulls, the thumb lies on the receiver's top beside the handle (a real charge hooks the latch, the thumb rests on the receiver); the first shape (fingers across, the T pinched from both sides) left the thumb 6.5 cm in the air; the fingers start hooked (start_curl) so the reach lands the palm by the latch, not 9 cm behind it over the stock",
+   "source": "authored 2026-10-26 (the owner: author the pinch through the gate), second shape: the left hand over the receiver's rear, palm down, the fingers pointing forward along the gun; the index hooks the charging handle's left wing from the front with its end joints and pulls, the thumb lies on the receiver's top beside the handle (a real charge hooks the latch, the thumb rests on the receiver); the first shape (fingers across, the T pinched from both sides) left the thumb 6.5 cm in the air; the fingers start hooked (start_curl) so the reach lands the palm by the latch, not 9 cm behind it over the stock; 2026-10-27: the thumb starts straight beside the index (thumb_base 30/10) so it lies forward on the receiver's top, not back into the stock (the M16A2 full run: tip 2 cm inside the stock)",
    "contact": "pinch",
    "palm_into": {
     "up": -1.0
@@ -218,7 +218,16 @@
      40.0,
      80.0,
      40.0
+    ],
+    "thumb": [
+     0.0,
+     0.0,
+     0.0
     ]
+   },
+   "thumb_base": {
+    "spread_deg": 30.0,
+    "palmar_deg": 10.0
    }
   },
   "l:assist": {
