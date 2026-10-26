@@ -132,15 +132,23 @@
    "fingers": {}
   },
   "l:handle": {
-   "source": "authored (fakepose 0.1, 2026-10-24): the charging handle hooked from above, the hand over the receiver, index and thumb pinching the T",
+   "source": "authored 2026-10-26 (the owner: author the pinch through the gate): the left hand over the receiver's rear, palm down, the fingers pointing right across the gun; the index pad on top of the charging handle's left wing and the thumb under it, the T pinched from both sides; the hand reaches until the pinch's middle sits on the wing",
    "contact": "pinch",
    "palm_into": {
     "up": -1.0
    },
    "fingers_toward": {
-    "left": -1.0
+    "left": -1.0,
+    "forward": 0.2
    },
-   "push_out": true,
+   "offset_cm": {
+    "left": 2.2,
+    "up": 0.2,
+    "forward": 0.0
+   },
+   "standoff_cm": 0.0,
+   "reach_mark": true,
+   "push_out": false,
    "fingers": {
     "index": {
      "rule": "curl_to_contact",

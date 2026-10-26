@@ -616,6 +616,19 @@ class FakePose:
                 if mv_ > 0.0:
                     L._put_hand(side, Matrix.LocRotScale(H1.translation, H1.to_quaternion(), L._unit()))
                     fixed.append({"reached_cm": mv_, "index_gap_cm": gap_})
+            if kind != "pinch" and all(not before["digits"][d]["touch"] for d in used if d != "thumb"):
+                # the whole hand sits off the part: moved in along the palm's facing until the palm's skin touches
+                H0 = Matrix(L._bw(L._n("hand", side)))
+                n_ = Vector(self.palm_normal_for(side, H0).tolist())
+                mv_ = 0.0
+                for _ in range(12):
+                    pg = float(self.gun_signed([list(self.anchor(side, "palm"))])[0])     # the palm's middle (a bone point)
+                    if pg <= self.glove + 1.0:                                              # the palm's half thickness
+                        break
+                    H0 = Matrix.Translation(n_ * 0.0025) @ H0
+                    L._put_hand(side, Matrix.LocRotScale(H0.translation, H0.to_quaternion(), L._unit()))
+                    mv_ += 0.25
+                fixed.append({"palm_in_cm": round(mv_, 2)})
             for d in used:
                 if not before["digits"][d]["touch"]:
                     if d == "thumb":
@@ -1113,7 +1126,7 @@ class FakePose:
                 for dg in digits:
                     moved.setdefault("opened", {})["%s:%s" % (sd, dg)] = self.open_to_clear(sd, dg)
                 if moved.get(sd, 0.0) >= max_cm:
-                    continue
+                    continue                     # the hand's set-back is spent (or not allowed: digits only)
                 if "palm" not in parts and all(self.digit_depth(sd, dg) <= self.glove for dg in digits):
                     continue                     # the opened digits cleared it: the hand stays
                 hn = L._n("hand", sd)
@@ -1193,7 +1206,10 @@ class FakePose:
         try:
             ec0 = self.eye_clip(res=(96, 54), sides=(side,))
             if ec0["clip_pixels"]:
-                moved, ec1 = self.unclip_seen(ec0, res=(96, 54), max_cm=3.0)
+                # the mend order (the owner, 2026-10-26): the digit that is inside opens; the hand moves only when the
+                # palm itself is inside (a hand set back after the digits closed left them 0.4 to 1.9 cm off)
+                palm_in = "palm" in (ec0.get("parts", {}).get(side) or [])
+                moved, ec1 = self.unclip_seen(ec0, res=(96, 54), max_cm=3.0 if palm_in else 0.0)
                 for digit in DIGITS:
                     r = rules.get(digit)
                     if r and r.get("rule") == "curl_to_contact" and ("%s:%s" % (side, digit)) in (moved.get("opened") or {}):
