@@ -64,10 +64,18 @@ class FakePose:
         p = os.path.join(DATA, "presets", fam + ".json")
         out = json.load(open(p, encoding="utf-8")) if os.path.exists(p) else {"holds": {}}
         import glob as _glob
-        for cap in sorted(_glob.glob(os.path.join(DATA, "presets", "captured", "%s_*.json" % self.facts["name"]))):
+        # a gun's own captures first; then its action family's (a hold against a mark point carries to any gun of the
+        # family with the same marks: the AR-15 bar's holds on every AR)
+        fam_ = self.facts.get("action")
+        for cap in sorted(_glob.glob(os.path.join(DATA, "presets", "captured", "*.json"))):
             d_ = json.load(open(cap, encoding="utf-8"))
-            if d_.get("gun") == self.facts["name"] and d_.get("side") and d_.get("mark"):
-                out.setdefault("captured", {})["%s:%s" % (d_["side"], d_["mark"])] = d_
+            if not (d_.get("side") and d_.get("mark")):
+                continue
+            key_ = "%s:%s" % (d_["side"], d_["mark"])
+            own_ = d_.get("gun") == self.facts["name"]
+            fam_ok = fam_ and d_.get("family") == fam_ and d_.get("rel_to_mark") and d_["mark"] in self.facts.get("marks", {})
+            if own_ or (fam_ok and key_ not in out.get("captured", {})):
+                out.setdefault("captured", {})[key_] = dict(d_, _own=own_)
         out["file"] = p
         return out
 
@@ -537,7 +545,11 @@ class FakePose:
         L, gk = self.L, self.gk
         cap = self.presets.get("captured", {}).get("%s:%s" % (side, mark))
         if cap is not None and kind in ("palm", None, cap.get("kind")):
-            rel = Matrix(cap["rel_to_mark_bone"])
+            if cap.get("rel_to_mark") and not cap.get("_own"):
+                # the family's capture: the hand against this gun's own mark point
+                rel = Matrix.Translation(Vector(list(gk["g"](self.facts["marks"][mark])))) @ Matrix(cap["rel_to_mark"])
+            else:
+                rel = Matrix(cap["rel_to_mark_bone"])
             H = gk["bone_world"](gk["mark_bone"](mark)) @ rel
             return H, {n: tuple(q) for n, q in cap["fingers"].items()}, "captured: " + cap["source"]
         key, p = self.preset(side, mark, kind)

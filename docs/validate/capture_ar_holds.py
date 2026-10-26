@@ -63,11 +63,12 @@ for s, mark, game_pt in (("r", "grip", grip_game), ("l", "support", support_game
     game_rel = [game_pt[0], game_pt[1], game_pt[2] - bore_z]
     shift = lab.ue(ours) - lab.ue(game_rel)
     rel2 = Matrix.Translation(shift) @ rel
+    rel_mark = Matrix.Translation(-lab.ue(game_rel)) @ rel            # the hand against the mark point itself (any gun of the family)
     fingers = {pb.name: list(pb.rotation_quaternion) for pb in L.arm.pose.bones
                if any(pb.name.startswith(f + "_") for f in FINGERS) and pb.name.endswith("_" + s)}
     an = L.anatomy(s)[s]
     rec = {"contract": "fakepose-captured/1", "gun": facts["name"], "side": s, "mark": mark, "fingers_fit": False,
-           "rel_to_mark_bone": [list(r) for r in rel2], "fingers": fingers,
+           "rel_to_mark_bone": [list(r) for r in rel2], "rel_to_mark": [list(r) for r in rel_mark], "family": "ar_gas", "fingers": fingers,
            "source": "the game's AR-15 idle (the pack's hold, mended 2026-10-10), read with Pose Lab (rig ar) on 2026-10-26: the owner's bar (POSE_RULES.md); "
                      "the hand's frame against the gun's, moved from the pack gun's %s point %s to the AR15's %s mark %s (gun cm)" % (mark, [round(v, 2) for v in game_pt], mark, ours),
            "readings": {"hand_in_gun_frame_cm": [round(v, 2) for v in hand[s]], "wrist_bend_deg": an.get("wrist_bend_deg"), "elbow_bend_deg": an.get("elbow_bend_deg"),

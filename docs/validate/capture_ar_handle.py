@@ -28,9 +28,10 @@ ours = facts["marks"]["handle"]
 hand = lab.ue_back(Ginv @ L._bw("hand_l").translation)
 rel = Ginv @ L._bw("hand_l")
 rel2 = Matrix.Translation(lab.ue(ours) - lab.ue(game_rel)) @ rel
+rel_mark = Matrix.Translation(-lab.ue(game_rel)) @ rel
 an = L.anatomy("l")["l"]
 rec = {"contract": "fakepose-captured/1", "gun": facts["name"], "side": "l", "mark": "handle", "kind": "pinch", "fingers_fit": False,
-       "rel_to_mark_bone": [list(r) for r in rel2],
+       "rel_to_mark_bone": [list(r) for r in rel2], "rel_to_mark": [list(r) for r in rel_mark], "family": "ar_gas",
        "fingers": {pb.name: list(pb.rotation_quaternion) for pb in L.arm.pose.bones if pb.name.endswith("_l") and any(pb.name.startswith(f + "_") for f in ("thumb", "index", "middle", "ring", "pinky"))},
        "source": "the game's AR-15 charge clip at the pull (the left knuckle nearest the handle), read with Pose Lab (rig ar) on 2026-10-26: the owner's bar; the hand's frame against the gun's, moved from the pack gun's handle point %s (against its bore line) to the AR15's handle mark %s" % ([round(v, 2) for v in game_rel], ours),
        "readings": {"hand_in_gun_frame_cm": [round(v, 2) for v in hand], "wrist_bend_deg": an.get("wrist_bend_deg"), "elbow_bend_deg": an.get("elbow_bend_deg"), "bad": an.get("bad")}}
