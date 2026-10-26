@@ -80,7 +80,7 @@
    }
   },
   "l:mag_grab": {
-   "source": "authored (fakepose 0.1, 2026-10-24): the magazine taken in the hand, the palm on its left face, the fingers round its front",
+   "source": "authored (fakepose 0.1, 2026-10-24): the magazine taken in the hand, the palm on its left face, the fingers round its front; 2026-10-27: the thumb starts beside the index metacarpal, straight, in the palm's plane (thumb_base spread 25, palmar 5), then closes to the magazine's left face: a thumb folded across the palm went through the magazine's body (the gate, AR15 and M16A2)",
    "contact": "palm_skin",
    "palm_into": {
     "left": -1.0
@@ -116,6 +116,17 @@
      "target_deg": "fist",
      "other_hand": false
     }
+   },
+   "thumb_base": {
+    "spread_deg": 25.0,
+    "palmar_deg": 5.0
+   },
+   "start_curl": {
+    "thumb": [
+     0.0,
+     0.0,
+     0.0
+    ]
    }
   },
   "l:catch": {

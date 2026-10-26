@@ -1614,12 +1614,15 @@ class FakePose:
                                                         thumb=[0, round(float((gt_.get("thumb_02") or [0])[0])), round(float((gt_.get("thumb_03") or [0])[0]))])
             except Exception as e_:
                 curls["captured_curls_error"] = repr(e_)[:160]
-        if start_curl:
+        thumb_base = tune.get("thumb_base") or _pre.get("thumb_base")
+        if start_curl or thumb_base:
             # the hold's starting shape (a hook before the reach: the pad close under the palm, so the palm lands by
-            # the part, not a straight finger's length behind it)
+            # the part, not a straight finger's length behind it; the thumb's base where the hold wants it)
             L._put_hand(side, H)
+            if thumb_base:
+                curls["thumb_base"] = self.set_thumb_base(side, float(thumb_base.get("spread_deg", 30.0)), float(thumb_base.get("palmar_deg", 20.0)))
             for dg, degs in start_curl.items():
-                L.set_curl(side, dg, degs) if hasattr(L, "set_curl") else self.set_curl(side, dg, degs)
+                self.set_curl(side, dg, degs)
         if _cap.get("reach_mark") or _pre.get("reach_mark"):
             H, _mv, _gap = self.reach_mark(side, mark, H)
             reached = {"moved_cm": _mv, "pad_gap_cm": _gap}
