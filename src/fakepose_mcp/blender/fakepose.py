@@ -435,12 +435,66 @@ class FakePose:
             M2 = Matrix.Translation(-F_ * (k * step_cm / 100.0)) @ M
             d_aim = (M2.translation - S).length
             d_rest = (M2.translation + shift - S).length
-            over = max(0.0, d_aim - reach, d_rest - reach) * 100.0          # cm past the arm's reach, at the aim or at rest
+            over = max(0.0, d_aim - reach, d_rest - reach + 0.02) * 100.0   # cm past the arm's reach, at the aim or at rest (2 cm of sway kept)
             if best is None or over < best[1]:
                 best = (k * step_cm, over, M2)
             if over <= 0.0:
                 break
         return best[2], best[0]
+
+    def thumb_toward_gun(self, side, step_deg=3.0, max_deg=70.0):
+        """The thumb swung as one about its base (the axis square to the thumb and to the way to the gun's nearest
+        surface) until its pad touches (the glove counted), at most max_deg. Returns the swing and the gap left."""
+        L = self.L
+        bvh = self.gun_bvh()
+        n = L._n("finger", side, "thumb", "01")
+        base = L._bw(n).translation.copy()
+        turned = 0.0
+        gap = None
+        for _ in range(int(max_deg / step_deg)):
+            tip = Vector(list(L._anchor(side, "thumb_tip")))
+            gap = float(self.gun_signed([list(tip)])[0])
+            if gap <= self.glove:
+                break
+            near = bvh.find_nearest(tip)[0]
+            if near is None:
+                break
+            d = (near - tip)
+            axis = (tip - base).cross(d)
+            if axis.length < 1e-6:
+                break
+            L._turn_about(n, axis.normalized(), step_deg, base)
+            turned += step_deg
+        return {"swing_deg": round(turned, 1), "pad_gap_cm": round(gap, 2) if gap is not None else None}
+
+    def relax_wrist(self, side):
+        """A hand in transit (holding nothing) relaxes: when its line bends past WRIST_MAX off the forearm, the hand is
+        turned about the wrist by the least angle that brings the bend to WRIST_MAX (its roll kept), then the roll
+        goes into the forearm. Returns the bend before and after."""
+        L = self.L
+        hn = L._n("hand", side)
+        W = L._bw(hn).translation.copy()
+        E = L._bw(L._n("lowerarm", side)).translation
+        K = L._bw(L._n("finger", side, "middle", "01")).translation
+        fore = (W - E).normalized()
+        hand = (K - W).normalized()
+        bend = math.degrees(fore.angle(hand))
+        if bend <= self.WRIST_MAX:
+            return {"before": round(bend, 1), "after": round(bend, 1)}
+        axis = hand.cross(fore)
+        if axis.length < 1e-6:
+            return {"before": round(bend, 1), "after": round(bend, 1)}
+        R = Matrix.Rotation(math.radians(bend - self.WRIST_MAX), 4, axis.normalized())
+        H = L._bw(hn).copy()
+        M = Matrix.Translation(W) @ R @ Matrix.Translation(-W) @ H
+        L._set_world(hn, Matrix.LocRotScale(W, M.to_quaternion(), L._unit()))
+        L._roll_forearm(side)
+        K2 = L._bw(L._n("finger", side, "middle", "01")).translation
+        after = round(math.degrees(fore.angle((K2 - W).normalized())), 1)
+        if hasattr(self, "last_limits") and side in self.last_limits:
+            self.last_limits[side]["wrist_bend_deg"] = after
+            self.last_limits[side]["relaxed_from_deg"] = round(bend, 1)
+        return {"before": round(bend, 1), "after": after}
 
     def palm_normal_for(self, side, M):
         """The palm's normal (out of the palm) as M would set it."""
@@ -974,6 +1028,11 @@ class FakePose:
             if not r or r.get("rule") == "keep":
                 continue
             if r["rule"] == "curl_to_contact":
+                if digit == "thumb":
+                    # the owner, 2026-10-26: "thumb need to hold/close to the gun": the thumb's base swung toward the
+                    # gun until its pad is at the surface (a thumb closes by its base, not by folding its tip), then
+                    # the joints curl to contact
+                    curls["thumb_close"] = self.thumb_toward_gun(side)
                 curls[digit] = self.curl_to_contact(side, digit, r["target_deg"], other=bool(r.get("other_hand")))
         Hn = L._bw(L._n("hand", side)).copy()
         _VR, _VF, _VU = (np.array(list(v)) for v in self.gk["view"])

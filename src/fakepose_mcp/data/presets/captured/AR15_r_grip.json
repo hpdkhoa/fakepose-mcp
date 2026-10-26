@@ -3,6 +3,7 @@
  "gun": "AR15",
  "side": "r",
  "mark": "grip",
+ "fingers_fit": false,
  "rel_to_mark_bone": [
   [
    -0.0007596281357109547,
@@ -20,7 +21,7 @@
    0.0010873236460611224,
    0.0014770146226510406,
    0.009830331429839134,
-   -0.059254877269268036
+   -0.02925487607717514
   ],
   [
    0.0,
@@ -145,7 +146,7 @@
    0.06103244423866272
   ]
  },
- "source": "the game's AR-15 idle (the pack's hold, mended 2026-10-10), read with Pose Lab (rig ar) on 2026-10-26: the owner's bar (POSE_RULES.md); the hand's frame against the gun's, moved from the pack gun's grip point [-1.22, -7.45, -8.84] to the AR15's grip mark [-1.43, -15.265, -9.955] (gun cm); fingers_fit false: the finger turns fit the pack gun's handguard and grip, so the digits close to contact on the AR15 by the authored rules",
+ "source": "the game's AR-15 idle (the pack's hold, mended 2026-10-10), read with Pose Lab (rig ar) on 2026-10-26: the owner's bar (POSE_RULES.md); the hand's frame against the gun's, moved from the pack gun's grip point [-1.22, -7.45, -8.84] to the AR15's grip mark [-1.43, -15.265, -9.955] (gun cm)",
  "readings": {
   "hand_in_gun_frame_cm": [
    -4.15,
@@ -156,6 +157,5 @@
   "elbow_bend_deg": 101.0,
   "elbow_below_shoulder_cm": 25.7,
   "bad": []
- },
- "fingers_fit": false
+ }
 }

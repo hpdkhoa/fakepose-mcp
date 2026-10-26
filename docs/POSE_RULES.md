@@ -118,6 +118,32 @@ digits start open and close to contact by the authored rules.
 to the handle and back: wrist 44, elbow straight, the 4 clipping frames at the pull) and the cover, which fell to
 7.5 % as the support arm sits further from the eye than before.
 
+## Run 5, 2026-10-26: the thumb on the gun, the handle move, the capture against the bore
+
+The owner (2026-10-26): "continue, and one more thing to change is the thumb of support hand open too big, thumb
+need to hold/close to the gun." Built: the thumb closes by its base (swung toward the gun until its pad touches,
+then the joints curl: 15 degrees, pad at the surface); a hand in transit relaxes its wrist to 30 off the forearm and
+the arc's lift is cut where it takes the hand past the arm's reach; the support slide keeps 2 cm for the idle's
+sway; the capture measures both guns' points against their bore lines (the pack gun's frame origin lies 3 cm under
+its bore, which had put the hand 3 cm low). The clips that take the hands off the gun (equip, holster, run) are not
+judged on cover or joints: the bar has no such clips.
+
+| # | Rule | Game AR-15 | fakepose AR15, run 5 | Result |
+|---|---|---|---|---|
+| 1 to 3 | rest: bore, rear sight, muzzle | | as the bar | PASS |
+| 4 | cover 10 to 20 % | 11 to 19 % | aim 8.3, idle 5.9, check 5.7 | FAIL |
+| 5 | support hand on screen | yes | [-0.02, -0.92] | PASS |
+| 6 | check and charge roll, port | port 65 % | 94 to 100 % | PASS |
+| 7 | pulling hand on screen | charge yes; the game's own check has it off screen at the pull | 19 to 24 % of frames | FAIL |
+| 8 | joints | kept | support hand at rest [-0.8, 31.0, -16.1] (the game [1.2, 31.8, -10.5]), shoulder as the game's; support hold wrist 16, elbow 69; grip wrist 15; every gun clip: left wrist 3 to 30, left elbow 17 to 39 at least, right wrist 12 to 23, elbows 2 cm under the shoulder | PASS on the gun clips (equip and holster excluded) |
+| 9 | zero clipping | 0 | 2 frames (reload_empty) | FAIL |
+| 10 | targets and palms | yes | yes | PASS |
+
+7 of 10 on the gun clips. Both arms now stay inside the joint rules through every hold and every move on the gun.
+Left: the cover (the arms sit at the bar's stations, and still fill 6 % against the game's 15 %: the pack's sleeves
+and model bulk), the pulling hand's station at the charging handle (the authored pinch sits lower than the game's),
+and 2 clipping frames in the empty reload.
+
 ## What fakepose must change to meet the bar
 
 1. `idle_pull`: replace 14 down / 6 right / -4 back / pitch -10 with the bar's rest hold: the rear sight at [4, 13, -4]
