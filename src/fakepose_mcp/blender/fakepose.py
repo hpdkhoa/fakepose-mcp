@@ -470,7 +470,10 @@ class FakePose:
         gap = None
         for _ in range(int(max_deg / step_deg)):
             tip = Vector(list(L._anchor(side, "thumb_tip")))
-            gap = float(self.gun_signed([list(tip)])[0])
+            # the swing stops when any segment's skin touches (the thumb lies on the gun by its pad or its side): a
+            # tip that reaches the surface after the middle segment went through it is not a hold (the gate,
+            # 2026-10-26)
+            gap = float(min(self._gaps(side, "thumb", None)))
             if gap <= self.glove:
                 break
             near = bvh.find_nearest(tip)[0]
@@ -559,7 +562,7 @@ class FakePose:
         (a finger wrapped round a handguard touches with a segment, not always with its tip)."""
         # the skin's own least gap per segment (the same measure the curl stops on), the least of the three
         try:
-            return float(min(self._gaps(side, digit, False)))
+            return float(min(self._gaps(side, digit, None)))      # None: the gun alone (False raised and fell back to bone points)
         except Exception:
             L = self.L
             pts = [list(self._tip_of(side, digit))]
@@ -588,8 +591,13 @@ class FakePose:
             g = {}
             for d in DIGITS:
                 gap = self.digit_tip_gap(side, d)
-                g[d] = {"tip_gap_cm": round(gap, 2), "touch": gap <= self.glove + self.GATE_TOUCH_CM, "inside": gap < -self.glove - 0.05}
-            ing = self.hand_in_gun(side)
+                g[d] = {"tip_gap_cm": round(gap, 2), "touch": gap <= self.glove + self.GATE_TOUCH_CM, "inside": gap < -self.glove - 0.3}
+                if g[d]["inside"]:
+                    # which way out, in the gun's axes (cm): what an authored shift must undo
+                    g[d]["way_out_cm"] = self.digit_way_out(side, d)
+            # one measure throughout: the skin's segment gaps (a bone point sits a finger's thickness behind the skin)
+            ins = [d for d in DIGITS if g[d]["inside"]]
+            ing = {"deepest_cm": round(max((-g[d]["tip_gap_cm"] for d in ins), default=0.0), 2), "digits": ins}
             tw = {}
             try:
                 FL = L._limits()[1]
@@ -637,7 +645,9 @@ class FakePose:
                     H0 = Matrix.Translation(n_ * 0.0025) @ H0
                     L._put_hand(side, Matrix.LocRotScale(H0.translation, H0.to_quaternion(), L._unit()))
                     mv_ += 0.25
-                fixed.append({"palm_in_cm": round(mv_, 2)})
+                fixed.append({"palm_in_cm": round(mv_, 2), "gaps_before": {d: before["digits"][d]["tip_gap_cm"] for d in used},
+                              "gaps_after_move": {d: round(self.digit_tip_gap(side, d), 2) for d in used},
+                              "palm_facing_toward_gun": round(float(np.array(n_) @ (np.array(list(self.gk["mark_world"](getattr(self, "_gate_mark", "grip")))) - np.array(list(L._bw(L._n("hand", side)).translation)))), 3)})
             for d in used:
                 if not before["digits"][d]["touch"]:
                     if d == "thumb":
@@ -646,10 +656,89 @@ class FakePose:
                     r = rules.get(d) or {"target_deg": "fist"}
                     fixed.append({d: self.curl_to_contact(side, d, r.get("target_deg", "fist"), other=bool(r.get("other_hand")))["stopped_by"][:1]})
             for d in before["in_gun"]["digits"]:
-                fixed.append({d + "_opened": self.open_to_clear(side, d)})
+                if d == "thumb":
+                    fixed.append({"thumb_cleared": self.thumb_clear(side)})
+                    continue
+                fixed.append({d + "_opened": self.open_to_clear(side, d, max_deg=90.0)})
+                r = rules.get(d)
+                if r and r.get("rule") == "curl_to_contact":
+                    fixed.append({d + "_closed": self.curl_to_contact(side, d, r.get("target_deg", "fist"), other=bool(r.get("other_hand")))["stopped_by"][:1]})
             after = measure()
             return {"before": before, "fixed": fixed, "after": after, "pass": after["pass"], "fails": after["fails"]}
         return {"before": before, "fixed": fixed, "after": before, "pass": before["pass"], "fails": before["fails"]}
+
+    def thumb_clear(self, side, step_deg=3.0, max_deg=60.0):
+        """A thumb whose base segment sits inside the part: swung as one about its base away from the gun (the
+        reverse of thumb_toward_gun) until its skin is out by the glove, at most max_deg; then thumb_toward_gun lays
+        the pad back on. Opening the joints cannot move the base segment."""
+        L = self.L
+        bvh = self.gun_bvh()
+        n = L._n("finger", side, "thumb", "01")
+        base = L._bw(n).translation.copy()
+        turned = 0.0
+        for _ in range(int(max_deg / step_deg)):
+            gaps = self._gaps(side, "thumb", None)
+            if min(gaps) >= -self.glove:
+                break
+            # the deepest skin point of the thumb is what must come out: the swing carries it toward its nearest
+            # surface point (a swing read from the tip, when the tip is already outside, can leave the base inside)
+            deep, near = self._thumb_deepest(side, bvh)
+            if deep is None or near is None:
+                break
+            axis = (deep - base).cross(near - deep)
+            if axis.length < 1e-6:
+                break
+            L._turn_about(n, axis.normalized(), step_deg, base)
+            turned += step_deg
+        back = self.thumb_toward_gun(side, max_deg=max_deg)
+        return {"cleared_deg": round(turned, 1), "laid_back": back, "gaps_cm": [round(v, 2) for v in self._gaps(side, "thumb", None)]}
+
+    def digit_way_out(self, side, digit):
+        """The deepest skin point of a digit: its depth and the way out to the gun's nearest surface, in the gun's
+        axes (forward, up, left; cm), and the point itself in gun cm."""
+        bvh = self.gun_bvh()
+        deep, near = self._digit_deepest(side, digit, bvh)
+        if deep is None or near is None:
+            return None
+        F, U, Lf = self.gun_axes()
+        v = np.array(list(near - deep)) * 100.0
+        R = np.array(self.gk["bone_world"]("Root"))
+        pg = np.linalg.inv(R) @ np.array([deep.x, deep.y, deep.z, 1.0])
+        return {"forward": round(float(v @ F), 2), "up": round(float(v @ U), 2), "left": round(float(v @ Lf), 2),
+                "point_gun_cm": [round(float(pg[0]) * 100.0, 1), round(-float(pg[1]) * 100.0, 1), round(float(pg[2]) * 100.0, 1)]}
+
+    def _digit_deepest(self, side, digit, bvh):
+        """A digit's deepest skin point (world) and the gun's nearest surface point to it."""
+        L = self.L
+        P = L._skin_arrays()[0]
+        _b, _T, sidev, kind, segi = L._skin_static()
+        k = DIGITS.index(digit)
+        sc = 1 if side == "r" else 2
+        idx = np.nonzero((sidev == sc) & (kind == 3) & (segi >= k * 3) & (segi < k * 3 + 3))[0]
+        if not len(idx):
+            return None, None
+        D = self.gun_signed(P[idx])
+        i = int(np.argmin(D))
+        deep = Vector([float(v) for v in P[idx][i]])
+        return deep, bvh.find_nearest(deep)[0]
+
+    def _thumb_deepest(self, side, bvh):
+        return self._digit_deepest(side, "thumb", bvh)
+
+    def _thumb_deepest_old(self, side, bvh):
+        """The thumb's deepest skin point (world) and the gun's nearest surface point to it."""
+        L = self.L
+        P = L._skin_arrays()[0]
+        _b, _T, sidev, kind, segi = L._skin_static()
+        k = DIGITS.index("thumb")
+        sc = 1 if side == "r" else 2
+        idx = np.nonzero((sidev == sc) & (kind == 3) & (segi >= k * 3) & (segi < k * 3 + 3))[0]
+        if not len(idx):
+            return None, None
+        D = self.gun_signed(P[idx])
+        i = int(np.argmin(D))
+        deep = Vector([float(v) for v in P[idx][i]])
+        return deep, bvh.find_nearest(deep)[0]
 
     def palm_normal_for(self, side, M):
         """The palm's normal (out of the palm) as M would set it."""
@@ -1246,6 +1335,11 @@ class FakePose:
             # not a hold)
             rules = (p or {}).get("fingers") or {}
         curls = {}
+        # a digit that starts inside the part (the open hand's own curl already past the surface) opens first, then
+        # closes to contact from outside: a finger through the gun is not a hold, from any side (the owner, 2026-10-26)
+        in_gun0 = self.hand_in_gun(side)
+        for dg in in_gun0["digits"]:
+            curls[dg + "_opened_first_deg"] = self.open_to_clear(side, dg, max_deg=90.0)
         for digit in DIGITS:
             r = rules.get(digit)
             if not r or r.get("rule") == "keep":
@@ -1257,16 +1351,7 @@ class FakePose:
                     # the joints curl to contact
                     curls["thumb_close"] = self.thumb_toward_gun(side)
                 curls[digit] = self.curl_to_contact(side, digit, r["target_deg"], other=bool(r.get("other_hand")))
-        # a finger through the gun is not a hold, from any side (the owner, 2026-10-26: "I don't think market work has
-        # this false physics"): the digits the mesh says are inside are opened until clear, then closed to contact
-        in_gun = self.hand_in_gun(side)
-        if in_gun["digits"]:
-            for dg in in_gun["digits"]:
-                curls[dg + "_opened_cm"] = self.open_to_clear(side, dg)
-                r = rules.get(dg)
-                if r and r.get("rule") == "curl_to_contact":
-                    curls[dg + "_closed_again"] = self.curl_to_contact(side, dg, r["target_deg"], other=bool(r.get("other_hand")))
-            in_gun = dict(in_gun, after=self.hand_in_gun(side))
+        in_gun = dict(in_gun0, after=self.hand_in_gun(side))
         # the hold mended once against the eye's rule (zero clipping seen): what the eye sees inside the gun at the
         # hold is opened or set back here, then the digits close again; a frame-by-frame fix moved the whole hand off
         # the gun on many frames (the M16A2's idle: 143 of 181, the arm straightened to reach)
@@ -1277,7 +1362,12 @@ class FakePose:
                 # the mend order (the owner, 2026-10-26): the digit that is inside opens; the hand moves only when the
                 # palm itself is inside (a hand set back after the digits closed left them 0.4 to 1.9 cm off)
                 palm_in = "palm" in (ec0.get("parts", {}).get(side) or [])
-                moved, ec1 = self.unclip_seen(ec0, res=(96, 54), max_cm=3.0 if palm_in else 0.0)
+                if not palm_in:
+                    # digits only: the gate judges them on the mesh (the eye's depth read opened a finger the mesh
+                    # calls touching, 0.75 cm off after); the hold mend acts on the palm alone
+                    moved, ec1 = {}, ec0
+                else:
+                    moved, ec1 = self.unclip_seen(ec0, res=(96, 54), max_cm=3.0)
                 for digit in DIGITS:
                     r = rules.get(digit)
                     if r and r.get("rule") == "curl_to_contact" and ("%s:%s" % (side, digit)) in (moved.get("opened") or {}):

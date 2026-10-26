@@ -3,7 +3,7 @@
  "gun": "AR15",
  "side": "r",
  "mark": "grip",
- "fingers_fit": false,
+ "fingers_fit": true,
  "rel_to_mark_bone": [
   [
    -0.0007596281357109547,
@@ -184,5 +184,6 @@
   "elbow_bend_deg": 101.0,
   "elbow_below_shoulder_cm": 25.7,
   "bad": []
- }
+ },
+ "fingers_fit_note": "2026-10-26: the pack gun's pistol grip is the AR15's (one family): the game's finger turns, the thumb over the left as the bar has it, are kept and only closed or opened to contact"
 }
