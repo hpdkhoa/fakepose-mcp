@@ -311,3 +311,25 @@ skin touches; the thumb clear swings its deepest point out. Picture: `K:/Project
 The idle: 0 clipping frames of 181 from the eye. The M16A2 at the AR15's grip shift (back 3.5, down 3.5) fails
 badly (ring and pinky 2.7 to 3.0 inside on the grip's right face, thumb 2.3): its own authoring starts from zero.
 Pictures: `K:/Projects/Claude/cc/report/tune/AR15_{grip,support,handle}_gate_before_after.png`.
+
+### Run 14 (2026-10-27): the full finger rule; the AR15's four holds again
+
+The owner (2026-10-26, a picture of the M16A2 grip from the left): "why finger always bend backward? I remember I
+have a rule that not bend like that". The rule stood (no hyperextended or twisted finger); the gate's code kept only
+the "twisted" lines of Pose Lab's finger report and dropped "bent backward" and "curled past its range". Runs 11 to
+13 were judged under that filter: their PASS lines are void. Under the full rule the captured grip read knuckles
+curled 125 to 140 and end joints 143 to 153: the game rig's finger turns copied onto Gun Kit's arms (ar_slim) do not
+carry. Fixed: the bar's fingers captured as joint angles (`curls_deg`, the thumb base's spread and palm angle) and
+set with Pose Lab's measured setters; every curl and opening sets measured angles inside their ranges; a joint bent
+backward is straightened by the gate; a segment pushed deeper by the joints before it stops the close.
+
+| Hold (clip) | Gate | Digits (min skin gap, cm) | Finger faults | Joints |
+|---|---|---|---|---|
+| AR15 r:grip (idle), back 3.5 down 5.0 | PASS | thumb -0.08, index -0.17, middle 0.03, ring 0.10, pinky -0.02 | none | wrist 9, elbow 112, 26 cm under |
+| AR15 l:support (idle), up 0.5 | PASS | thumb -0.15, index 0.24, middle -0.11, ring 0.06, pinky 0.14 | none | wrist 16, elbow 69 |
+| AR15 l:handle (charge) | PASS | thumb -0.15, index -0.18 | none | wrist 11, elbow 128 |
+| AR15 l:mag_grab (reload), thumb_base 25/5 | PASS | thumb -0.20, index 0.12, middle 0.15, ring -0.30, pinky 0.09 | none | wrist 2, elbow 83 |
+
+The idle: 0 clipping frames of 181 from the eye. The bar's grip angles as captured: index -15/89/-5, middle 83/74/88,
+ring 81/71/88, pinky 65/64/88, thumb knuckle 58, end 88, base spread 46, palm 50; read back on Gun Kit's arms to the
+degree. The M16A2's four holds: see run 15.

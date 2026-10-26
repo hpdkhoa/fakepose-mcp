@@ -25,6 +25,7 @@ compress so the rules and what I asked still be up to date"). The owner's words 
 | 2026-10-24 | "the idle position is just the aim position with a pull"; the reload view: the port in the lower third, rolled to the eye (the M24) |
 | 2026-10-25 | The AR-15 clips are the bar for fakepose. Joint limits in the IK (wrist 30, elbow 5 to 150, under the shoulder): the market's method with a body's limits, nothing refused. Keep the cover band. Fix the rolled wrist and the clipping first |
 | 2026-10-26 | Rifles use the game camera (choice 1). Fix the left arm and the open fingers; the support thumb must close on the gun. Continue optimising. The chamber check in two variants, with the bullet and without, in the labs. A finger twisted, clipping, not touching is false physics: fix. Set up the hand gate and write it into the rules. Keep this state file. Fix the mend order, then author the two holds |
+| 2026-10-27 | The gate keeps every finger fault (the owner's question on fingers bent backward); the bar's fingers carried as joint angles, set by Pose Lab's measured setters; curls and openings set measured angles inside the ranges |
 | 2026-10-26 | Engine additions while authoring (mine, told): `way_out_cm` on an inside digit, the thumb swing stopping at any segment's touch, the thumb clearing by its deepest point, the gate's untwist, `start_curl` (a hold's starting hook), `fingers_fit` true on the AR15 grip capture |
 | 2026-10-26 | fakepose stays decoupled from Pose Lab: the fast market path, no Hold Lab solver behind its gate (it shares Pose Lab's Blender library for the plumbing only). Build per-gun authored holds (presets/guns/<gun>.json, tuned by the gate's numbers) and a wrap curl (joints close one after another, each at its own touch; the thumb swings toward the index first) |
 | 2026-10-25 | The M107 is on hold until the owner reviews the rest |
@@ -46,7 +47,7 @@ My own choices, told to the owner: the rifle family keeps the first-person templ
 
 ## Open, by the gate's numbers (2026-10-26)
 
-- AR15: all four holds PASS (run 13: grip, handguard, handle, cup). M16A2 (its own authoring from zero, the AR15's grip shift does not carry): grip middle/ring 0.79 off, thumb 0.33 inside; handguard 0.75 to 3.5 off, index and thumb 0.78 inside; handle three fingers 1.45 inside; magazine thumb 0.97 inside.
+- AR15: all four holds PASS under the full finger rule (run 14). Runs 11 to 13 judged twist only (void). M16A2 (its own authoring from zero, the AR15's grip shift does not carry): grip middle/ring 0.79 off, thumb 0.33 inside; handguard 0.75 to 3.5 off, index and thumb 0.78 inside; handle three fingers 1.45 inside; magazine thumb 0.97 inside.
 - Cause for most: the eye mend sets the whole hand back up to 3 cm after the digits closed. Fix: open the digit that is inside; move the hand only when the palm is inside.
 - The handle pinch and the magazine cup hold nothing: author them (presets), through the gate.
 - Cover 6 % against the game's 11 to 19 % (arm and model bulk); rule 7 (pulling hand on screen 19 to 24 % against the game's 44 and 58).
