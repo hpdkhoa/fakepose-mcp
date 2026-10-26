@@ -201,6 +201,28 @@ finger 1.31 cm in, then 0.24). This extends rule 9 at the hold from "seen from t
 any side"; the frame-by-frame rule stays the eye's. Left: the pinch touches but does not wrap the T (thumb and
 index closing on the wing from both sides), to author.
 
+## Run 10, 2026-10-26: the mend order and the two authored holds, through the gate
+
+The owner: "fix the mend order first then author the two holds." Built: the hold mend opens the digit that is
+inside and moves the hand only when the palm is; the gate moves a palm or cup hold in along the palm's facing until
+the palm touches, then closes the digits; the charging-handle pinch authored as a preset (the hand over the
+receiver's rear, palm down, the pinch's middle on the T's left wing, reaching the part); the magazine cup kept as
+authored and pushed in by the gate.
+
+| Hold | AR15 | M16A2 |
+|---|---|---|
+| Grip | FAIL: middle 0.75 cm off (was thumb 0.77 and middle 0.44) | FAIL: middle, ring 0.79 off; thumb 0.33 inside (unchanged) |
+| Handguard | FAIL: thumb 0.61, ring 1.49, pinky 0.61 off; index 0.27 inside (the palm moved in 3.0 cm) | FAIL: 0.75 to 3.53 off; index and thumb 0.78 inside (unchanged: its eye mend still moved the hand, the palm was in the seen parts) |
+| Bolt catch | PASS | PASS |
+| Handle pinch (authored) | FAIL: the index reached (0.6 cm), the thumb 4.11 off after a full swing | FAIL: index 1.26 off; index, middle, thumb 1.12 inside |
+| Magazine cup | FAIL: fingers 1.2 to 2.0 off, thumb 0.95 inside | FAIL: fingers 1.0 to 2.5 off, thumb 0.96 inside (the palm moved in 2.75 cm) |
+
+Rule 11 FAIL on both; the other rules as run 9 (AR15 8 of 10, M16A2 6 of 10), 0 clipping seen. What the numbers
+say: a palm pushed to the surface still leaves the fingers 1 to 2 cm off where the part is thin (the rail, the
+magazine): the fingers need to wrap round, which the curl to a fist target on a hinge does not reach; the thumb on
+the grip and the magazine sits inside and only opens. The pinch's thumb cannot reach under the T from a palm-down
+hand on these models. These holds need authoring on each gun's own surfaces, hold by hold, with the gate as judge.
+
 ## The M16A2 on the AR-15 bar, 2026-10-26
 
 The captures now carry the hand against the mark point and a family (`ar_gas`): any gun of the family with the same

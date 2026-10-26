@@ -40,7 +40,7 @@ My own choices, told to the owner: the rifle family keeps the first-person templ
 | Left arm and open fingers; the thumb on the gun | done to the holds' numbers; the gate now says the holds still miss (below) |
 | The round in the chamber, two variants | done: rounds.py, blueprint_round, showcase loaded/empty (`out/showcase/<gun>/`), rig Round mesh and FBX riding the running part, hands round option; the M24 round shows at the port; the M16A2's stays behind the port wall at the check's draw |
 | The hand gate | built; first entries FAIL on both guns (POSE_RULES rule 11) |
-| The mend order, then the handle pinch and the magazine cup authored | in progress (this step) |
+| The mend order, then the handle pinch and the magazine cup authored | mend order done; the pinch authored and the cup pushed in; both still FAIL the gate (POSE_RULES run 10): the fingers do not wrap thin parts, the thumb sits inside; hold-by-hold authoring on each gun is the next work |
 
 ## Open, by the gate's numbers (2026-10-26)
 
