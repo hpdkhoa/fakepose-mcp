@@ -164,6 +164,24 @@ capped at 4 cm, 2.5 cm deep); captured holds may carry a kind.
 view), and rule 7, whose bar value came from the approach, not the pull: to re-measure on the game's clip before it
 counts.
 
+## The M16A2 on the AR-15 bar, 2026-10-26
+
+The captures now carry the hand against the mark point and a family (`ar_gas`): any gun of the family with the same
+marks takes them on its own grip, support and handle. The M16A2 (the TM-built model with the carry handle), two runs
+(the clips split under the 10 minute rule), the per-part judgements joined:
+
+| # | Rule | fakepose M16A2 | Result |
+|---|---|---|---|
+| 1 to 3, 5, 10 | rest pose, support hand, targets | as the bar: rear sight [3.8, 13.1, -4.4], support hand at rest [-0.8, 31.9, -17.2] | PASS |
+| 4 | cover | 5 to 11 % | FAIL |
+| 6 | port to the eye at roll 60 | port 53 % visible (the carry handle and the deflector over the M16A2's port; the AR15's flat top gave 94 %) | FAIL, 7 % under |
+| 7 | pulling hand on screen | 17 to 19 % | FAIL as written |
+| 8 | joints | holds: grip wrist 19, support wrist 15 elbow 66 (slid 14 cm), handle from the capture; clips: left wrist 5 to 33 (33 in the empty reload at 1.95 s), left elbow straight for a moment in the walk (0.58 s) and the charge (1.1 s), right wrist 11 to 23 | FAIL on three moments |
+| 9 | clipping | 1 frame (check, 0.22 s) on 1,178 | FAIL by one frame |
+
+5 to 6 of 10. The same shape as the AR15 before its last two runs: the holds sit at the bar; a few transit moments
+and the port's cover under the carry handle remain.
+
 ## What fakepose must change to meet the bar
 
 1. `idle_pull`: replace 14 down / 6 right / -4 back / pitch -10 with the bar's rest hold: the rear sight at [4, 13, -4]
