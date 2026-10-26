@@ -43,11 +43,15 @@ My own choices, told to the owner: the rifle family keeps the first-person templ
 | Left arm and open fingers; the thumb on the gun | done to the holds' numbers; the gate now says the holds still miss (below) |
 | The round in the chamber, two variants | done: rounds.py, blueprint_round, showcase loaded/empty (`out/showcase/<gun>/`), rig Round mesh and FBX riding the running part, hands round option; the M24 round shows at the port; the M16A2's stays behind the port wall at the check's draw |
 | The hand gate | built; first entries FAIL on both guns (POSE_RULES rule 11) |
-| The mend order, then the handle pinch and the magazine cup authored | done: the mend order, the per-gun overlay (presets/guns/<gun>.json), the wrap curl (off by default: it twisted), the gate's palm-in. All holds but the bolt catch still FAIL the gate (POSE_RULES run 11). The AR15's four holds pass (run 13). Next: the M16A2's four holds, then a full AR15 run (clips_only.py) to confirm rule 11 in the whole hands.json. Tool: tune_hold.py <gun> <side:mark> <clip> <fwd> <up> <left> (run from the game folder K:/epic/ToangTown/ToangTown; the gate's way_out_cm says which way to shift) |
+| The mend order, then the handle pinch and the magazine cup authored | done: the mend order, the per-gun overlay (presets/guns/<gun>.json), the wrap curl (off by default: it twisted), the gate's palm-in. All holds but the bolt catch still FAIL the gate (POSE_RULES run 11). Eight of eight holds pass the full rule (runs 14 and 15). Next: a full AR15 and M16A2 Gun Kit run (clips_only.py) to confirm rule 11 across every clip, then the video showcase (queued ask). Tool: tune_hold.py <gun> <side:mark> <clip> <fwd> <up> <left> (run from the game folder K:/epic/ToangTown/ToangTown; the gate's way_out_cm says which way to shift) |
+
+## Queued asks
+
+- 2026-10-27, the owner: "when all done, I want to have a video showcase about the evolution of all my lab mcp, and the visual flow of the lab mcp collaboration". After the M16A2's four holds pass the full rule. Sources: `K:/Projects/Claude/cc/report/lab_mcp_retrospective_2026-10-25.md`, each lab's git log, the showcases in `cc/out/showcase/`.
 
 ## Open, by the gate's numbers (2026-10-26)
 
-- AR15: all four holds PASS under the full finger rule (run 14). Runs 11 to 13 judged twist only (void). M16A2 (its own authoring from zero, the AR15's grip shift does not carry): grip middle/ring 0.79 off, thumb 0.33 inside; handguard 0.75 to 3.5 off, index and thumb 0.78 inside; handle three fingers 1.45 inside; magazine thumb 0.97 inside.
+- AR15: all four holds PASS under the full finger rule (run 14). Runs 11 to 13 judged twist only (void). M16A2: all four holds PASS under the full rule (run 15; grip back 2.5 down 4.2 right 0.4, cup up 1.5 left 1.0). Old numbers: grip middle/ring 0.79 off, thumb 0.33 inside; handguard 0.75 to 3.5 off, index and thumb 0.78 inside; handle three fingers 1.45 inside; magazine thumb 0.97 inside.
 - Cause for most: the eye mend sets the whole hand back up to 3 cm after the digits closed. Fix: open the digit that is inside; move the hand only when the palm is inside.
 - The handle pinch and the magazine cup hold nothing: author them (presets), through the gate.
 - Cover 6 % against the game's 11 to 19 % (arm and model bulk); rule 7 (pulling hand on screen 19 to 24 % against the game's 44 and 58).

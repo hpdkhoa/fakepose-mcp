@@ -333,3 +333,16 @@ backward is straightened by the gate; a segment pushed deeper by the joints befo
 The idle: 0 clipping frames of 181 from the eye. The bar's grip angles as captured: index -15/89/-5, middle 83/74/88,
 ring 81/71/88, pinky 65/64/88, thumb knuckle 58, end 88, base spread 46, palm 50; read back on Gun Kit's arms to the
 degree. The M16A2's four holds: see run 15.
+
+### Run 15 (2026-10-27): the M16A2's four holds under the full finger rule
+
+| Hold (clip) | Gate | Digits (min skin gap, cm) | Finger faults | Joints |
+|---|---|---|---|---|
+| M16A2 r:grip (idle), back 2.5 down 4.2 right 0.4 | PASS | thumb -0.10, index 0.50, middle 0.13, ring 0.12, pinky 0.10 | none | wrist 8, elbow 114, 26 cm under |
+| M16A2 l:support (idle) | PASS | thumb -0.17, index 0.06, middle 0.12, ring 0.02, pinky 0.09 | none | wrist 15, elbow 66 |
+| M16A2 l:handle (charge) | PASS | thumb -0.09, index 0.01 | none | wrist 18, elbow 126 |
+| M16A2 l:mag_grab (reload), up 1.5 left 1.0 | PASS | thumb -0.38, index 0.08, middle 0.12, ring 0.11, pinky 0.06 | none | wrist 3, elbow 85 |
+
+The cup's thumb base setter now lowers each reading on its own axis (it had stalled at palm 29 asked 5); the AR15 cup
+re-judged with it: PASS (thumb -0.07, palm 5). Eight of eight holds pass on the two guns. Pictures:
+`K:/Projects/Claude/cc/report/tune/{AR15,M16A2}_grip_full_rule.png`, `M16A2_cup_full_rule.png`.

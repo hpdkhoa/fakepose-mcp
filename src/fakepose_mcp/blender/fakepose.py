@@ -1116,16 +1116,18 @@ class FakePose:
             if abs(e[0]) <= tol and abs(e[1]) <= tol:
                 break
             moved = False
-            for ax in axes:
+            for ax, k_ in zip(axes, (0, 1)):
+                # each axis lowers its own reading (the palm's normal: the spread; across the hand: the palm angle);
+                # a sum of both stalled at palm 29 asked 5 (the M16A2 cup, 2026-10-27)
                 base = L._bw(n).translation.copy()
                 M0 = L._bw(n).copy()
-                best = (abs(e[0]) + abs(e[1]), None, e)
+                best = (abs(e[k_]), None, e)
                 for sg in (1.0, -1.0):
                     L._set_world(n, M0)
                     L._turn_about(n, ax, sg * step, base)
                     e2 = err()
-                    if abs(e2[0]) + abs(e2[1]) < best[0] - 0.1:
-                        best = (abs(e2[0]) + abs(e2[1]), L._bw(n).copy(), e2)
+                    if abs(e2[k_]) < best[0] - 0.1:
+                        best = (abs(e2[k_]), L._bw(n).copy(), e2)
                 L._set_world(n, best[1] if best[1] is not None else M0)
                 if best[1] is not None:
                     e, moved = best[2], True

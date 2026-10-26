@@ -1,13 +1,13 @@
 {
  "contract": "fakepose-gun-tuning/1",
  "gun": "M16A2",
- "source": "authored 2026-10-26 from the hand gate's numbers (POSE_RULES run 10): the grip's middle and ring 0.79 off with the thumb 0.33 inside; the handguard 0.75 to 3.5 off with the index and thumb 0.78 inside; the pinch's index, middle, thumb 1.1 inside; the cup's fingers 1.0 to 2.5 off with the thumb 0.96 inside; 2026-10-26 second pass: the shifts for the handguard, the pinch and the cup made them worse (guessed directions), removed; the gate's measured palm-in does that work; 2026-10-26 third pass: the grip authored through the gate (back 2.5, down 4.5; the thumb's root sat in the lower receiver's rear at gun [0, -17.8, -1.6]): PASS thumb -0.38, index 0.00, middle 0.05, ring -0.04, pinky 0.00; wrist 7, elbow 113",
+ "source": "authored 2026-10-26 from the hand gate's numbers (POSE_RULES run 10): the grip's middle and ring 0.79 off with the thumb 0.33 inside; the handguard 0.75 to 3.5 off with the index and thumb 0.78 inside; the pinch's index, middle, thumb 1.1 inside; the cup's fingers 1.0 to 2.5 off with the thumb 0.96 inside; 2026-10-26 second pass: the shifts for the handguard, the pinch and the cup made them worse (guessed directions), removed; the gate's measured palm-in does that work; 2026-10-26 third pass: the grip authored through the gate (back 2.5, down 4.5; the thumb's root sat in the lower receiver's rear at gun [0, -17.8, -1.6]): PASS thumb -0.38, index 0.00, middle 0.05, ring -0.04, pinky 0.00; wrist 7, elbow 113; 2026-10-27 under the full finger rule: grip back 2.5 down 4.2 right 0.4 PASS; handguard and handle PASS with no shift; cup up 1.5 left 1.0 PASS with the rifle preset's thumb base",
  "holds": {
   "r:grip": {
    "shift_cm": {
     "forward": -2.5,
-    "up": -4.5,
-    "left": 0.0
+    "up": -4.2,
+    "left": -0.4
    },
    "curl": "together"
   },
