@@ -198,6 +198,13 @@ class FakePose:
         kept in the report for comparison."""
         L, gk = self.L, self.gk
         VR, VF, VU = (Vector(list(v)) for v in gk["view"])
+        if self.family == "rifle" and self.presets.get("eye", "game") == "game":
+            # the owner, 2026-10-26: rifles use the game camera (Gun Kit's eye, the one the bar was measured from); the
+            # head-bone eye stood 8.9 cm ahead and 2.8 cm under it, so the gun placed from it stood 9 cm further
+            # forward than the bar and the support arm ran out of reach. Pistols keep the head-bone eye (2026-10-23).
+            self.report["eye"] = {"kept": "the game camera (Gun Kit's eye)", "eye": [round(x, 4) for x in L.eye],
+                                  "source": "the owner, 2026-10-26: rifles use the game camera"}
+            return L.eye
         hb = L.arm.pose.bones.get("head")
         if hb is None:
             self.report["eye"] = {"kept": [round(x, 4) for x in L.eye], "why": "the rig has no head bone"}
@@ -418,20 +425,22 @@ class FakePose:
             return M, 0.0
         F_ = Vector(self.gun_axes()[0].tolist())
         shift = Vector(self.rest_shift().tolist())
+        L = self.L
+        S = L._bw(L._n("upperarm", side)).translation
+        E0, W0 = L._bw(L._n("lowerarm", side)).translation, L._bw(L._n("hand", side)).translation
+        l1, l2 = (E0 - S).length, (W0 - E0).length
+        reach = math.sqrt(l1 * l1 + l2 * l2 + 2.0 * l1 * l2 * math.cos(math.radians(self.ELBOW_MIN + 10.0)))   # the elbow bent 15
         best = None
         for k in range(int(max_cm / step_cm) + 1):
             M2 = Matrix.Translation(-F_ * (k * step_cm / 100.0)) @ M
-            Mr = Matrix.Translation(shift) @ M2
-            _E, wrist, bend, under = self.best_elbow(side, Mr)
-            _E2, wrist2, bend2, _u2 = self.best_elbow(side, M2)          # at the aim too (the gun 5 cm nearer)
-            ok = min(bend, bend2) >= self.ELBOW_MIN + 10.0 and max(wrist, wrist2) <= self.WRIST_MAX + 10.0
-            # the least violation wins when no station is clean: the elbow's shortfall under 15 and the wrist's excess
-            viol = max(0.0, self.ELBOW_MIN + 10.0 - min(bend, bend2)) + max(0.0, max(wrist, wrist2) - (self.WRIST_MAX + 10.0))
-            if best is None or viol < best[3]:
-                best = (ok, k * step_cm, M2, viol)
-            if ok:
+            d_aim = (M2.translation - S).length
+            d_rest = (M2.translation + shift - S).length
+            over = max(0.0, d_aim - reach, d_rest - reach) * 100.0          # cm past the arm's reach, at the aim or at rest
+            if best is None or over < best[1]:
+                best = (k * step_cm, over, M2)
+            if over <= 0.0:
                 break
-        return best[2], best[1]
+        return best[2], best[0]
 
     def palm_normal_for(self, side, M):
         """The palm's normal (out of the palm) as M would set it."""
@@ -934,6 +943,11 @@ class FakePose:
         rule; then the eye's clip check. Returns (the hand's world matrix, the fingers' turns, the readings)."""
         L = self.L
         H, fingers, src = self.hand_on(side, mark, kind)
+        cap_ = self.presets.get("captured", {}).get("%s:%s" % (side, mark))
+        if fingers and cap_ is not None and cap_.get("fingers_fit") is False:
+            # the capture came from another gun: its hand placement is kept, its finger turns are not (they fit that
+            # gun's handguard); the digits start open and close to contact by the authored rules
+            fingers = None
         if fingers:
             for n, q in fingers.items():
                 L.arm.pose.bones[n].rotation_quaternion = q
@@ -962,7 +976,12 @@ class FakePose:
             if r["rule"] == "curl_to_contact":
                 curls[digit] = self.curl_to_contact(side, digit, r["target_deg"], other=bool(r.get("other_hand")))
         Hn = L._bw(L._n("hand", side)).copy()
+        _VR, _VF, _VU = (np.array(list(v)) for v in self.gk["view"])
+        _d = (np.array(list(L._bw(L._n("hand", side)).translation)) - np.array(list(L.eye))) * 100.0
+        _sh = (np.array(list(L._bw(L._n("upperarm", side)).translation)) - np.array(list(L.eye))) * 100.0
         out = {"preset": src, "arm_short_cm": round(short, 2), "curls": curls, "pushed_out_cm": pushed,
+               "hand_view_cm": [round(float(_d @ _VR), 1), round(float(_d @ _VF), 1), round(float(_d @ _VU), 1)],
+               "shoulder_view_cm": [round(float(_sh @ _VR), 1), round(float(_sh @ _VF), 1), round(float(_sh @ _VU), 1)],
                "limits": dict(getattr(self, "last_limits", {}).get(side) or {}, hand_turned_deg=round(turned, 1), slid_back_cm=round(slid, 1)),
                "arm": {k: v for k, v in L._arm_report(side, L._limits()[0])[0].items()
                        if k in ("elbow_bend_deg", "wrist_bend_deg", "wrist_flexion_deg", "wrist_radial_deg")}}

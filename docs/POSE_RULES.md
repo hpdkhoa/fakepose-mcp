@@ -93,6 +93,31 @@ at 27 degrees), and the moves to the handle and the catch bend the wrist in tran
 0.3 % under the band. The captured support's fingers stay open beside the AR15's slimmer rail (the closure from the
 pack's finger turns reads "already touching"): to mend.
 
+## Run 4, 2026-10-26: the game camera, the support within reach, the fingers closed
+
+The owner (2026-10-26): "fix the left arm and the open fingers next"; then "use 1, rifles use the game camera".
+Found: fakepose's eye (the head bone with the template's camera offset) stood 8.9 cm ahead and 2.8 cm under the
+game camera the bar was measured with, so the gun placed 13.1 cm from it stood 9 cm further forward than the bar and
+the support arm ran out of reach (55.0 cm from the shoulder, the arm's length). Built: rifles take the game camera
+(Gun Kit's eye; pistols keep the head-bone eye); the support hold slides back until the arm reaches it with a bent
+elbow at the aim and at rest (14 cm on the AR15); a hold captured from another gun keeps its placement only, so the
+digits start open and close to contact by the authored rules.
+
+| # | Rule | Game AR-15 | fakepose AR15, run 4 | Result |
+|---|---|---|---|---|
+| 1 to 3 | rest: bore, rear sight, muzzle | | as the bar | PASS |
+| 4 | cover 10 to 20 % | 11 to 19 % | aim 8.5, idle 7.5, fire 7.4, check 6.1 | FAIL |
+| 5 | support hand on screen | yes | [-0.02, -0.73] | PASS |
+| 6 | check and charge roll, port | port 65 % | port 94 to 100 % | PASS |
+| 7 | pulling hand on screen | yes | 21 to 33 % of frames | FAIL |
+| 8 | joints | kept | holds: grip wrist 15, elbow 110; support wrist 16, elbow 58 (the game: 30 and 27), hand at [-4.6, 28.9, -9.6] (the game [1.2, 31.8, -10.5]); clips: right wrist 24 at most; left 15 to 23 in idle, walk, fire, run; 44 in the move to the handle (charge 0.25 s), 32 to 34 in the check and the empty reload; left elbow straight for one moment of the idle sway (2.1 s) and in the handle moves | FAIL (the holds pass; the transits fail) |
+| 9 | zero clipping | 0 | 5 frames (charge 2, check 2 at the pull, aim 1) | FAIL |
+| 10 | targets and palms | yes | yes | PASS |
+
+6 of 10. Both holds now sit within the bar's numbers. What remains is in the moves between holds (the support hand
+to the handle and back: wrist 44, elbow straight, the 4 clipping frames at the pull) and the cover, which fell to
+7.5 % as the support arm sits further from the eye than before.
+
 ## What fakepose must change to meet the bar
 
 1. `idle_pull`: replace 14 down / 6 right / -4 back / pitch -10 with the bar's rest hold: the rear sight at [4, 13, -4]
