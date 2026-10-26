@@ -5,8 +5,8 @@
  "holds": {
   "r:grip": {
    "shift_cm": {
-    "forward": -3.5,
-    "up": -3.5,
+    "forward": 0.0,
+    "up": 0.0,
     "left": 0.0
    },
    "curl": "together"

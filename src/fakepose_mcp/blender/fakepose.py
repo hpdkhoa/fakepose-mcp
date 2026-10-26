@@ -133,9 +133,36 @@ class FakePose:
             if loc is None:
                 out[i] = 99.0
                 continue
-            inside = d < 0.03 and (v - loc).dot(nrm) < 0.0
+            inside = d < 0.03 and self._inside(bvh, v)
             out[i] = (-d if inside else d) * 100.0
         return out
+
+    def _inside(self, bvh, v, max_hits=64):
+        """Is v inside the gun: by signed ray crossings (an exit counts +1, an entry -1) along three fixed rays, a
+        vote of the three. The nearest face's side is not used: beside fine detail (a checkered grip's grooves, a
+        vent's wall) the nearest face's normal is not the surface's way out, and read a finger 3 cm off the M16A2's
+        grip as 3 cm inside (2026-10-26). Overlapping closed parts count as inside; a flipped part reads negative."""
+        votes = 0
+        for d_ in self._ray_dirs():
+            net, o, n_ = 0, Vector(v), 0
+            while n_ < max_hits:
+                loc, nrm, _i, dist = bvh.ray_cast(o, d_)
+                if loc is None:
+                    break
+                net += 1 if nrm.dot(d_) > 0.0 else -1
+                o = loc + d_ * 1e-5
+                n_ += 1
+            if net > 0:
+                votes += 1
+        return votes >= 2
+
+    def _ray_dirs(self):
+        c = getattr(self, "_rdirs", None)
+        if c is None:
+            F, U, Lf = self.gun_axes()
+            c = [Vector(list(Lf)).normalized(), Vector(list(-Lf)).normalized(), Vector(list(U)).normalized()]
+            self._rdirs = c
+        return c
 
     # --- the gun's frame ------------------------------------------------------------------------------------------
     def gun_axes(self):
