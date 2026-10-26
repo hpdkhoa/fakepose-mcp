@@ -541,6 +541,90 @@ class FakePose:
         inside = [(float(-D[i]), names[i] if i < len(names) else "?") for i in range(len(pts)) if float(D[i]) < -self.glove]
         return {"deepest_cm": round(max((d for d, _ in inside), default=0.0), 2), "digits": sorted(set(n for _, n in inside))}
 
+    # --- the hand gate (the owner, 2026-10-26: "setup a gate to auto check and calculate for the finger, touch point and
+    # everything related to this issue because the error happened a lot") ----------------------------------------------
+    GATE_TOUCH_CM = 0.3          # a digit the hold uses touches when its tip is within glove + this of the surface
+    GATE_TWIST_DEG = 15.0
+
+    def digit_tip_gap(self, side, digit):
+        """The digit's nearest skin to the gun: the least signed distance over its middle joint, end joint and tip
+        (a finger wrapped round a handguard touches with a segment, not always with its tip)."""
+        L = self.L
+        pts = [list(self._tip_of(side, digit))]
+        for j in ("02", "03"):
+            try:
+                pts.append(list(L._bw(L._n("finger", side, digit, j)).translation))
+            except Exception:
+                pass
+        return float(min(self.gun_signed(pts)))
+
+    def _tip_of(self, side, digit):
+        L = self.L
+        return L._anchor(side, "thumb_tip") if digit == "thumb" else L._finger_tip(digit, side)
+
+    def hold_gate(self, side, kind, rules, fix=True):
+        """Every hold measured before it is used: each digit the hold uses touches its part (tip gap), no digit inside
+        the mesh from any side, no finger twisted out of its plane, the thumb on the gun, the wrist and elbow inside
+        their limits. With fix, what can be mended is (a digit closed to contact, one inside opened, the thumb swung
+        on), then measured again. Returns the numbers and pass/fail; a failing hold is reported, never shown as done."""
+        L = self.L
+        used = [d for d in DIGITS if (rules.get(d) or {}).get("rule") == "curl_to_contact"]
+        if kind == "pinch":
+            used = [d for d in ("thumb", "index") if d in used] or ["thumb", "index"]
+
+        def measure():
+            g = {}
+            for d in DIGITS:
+                gap = self.digit_tip_gap(side, d)
+                g[d] = {"tip_gap_cm": round(gap, 2), "touch": gap <= self.glove + self.GATE_TOUCH_CM, "inside": gap < -self.glove - 0.05}
+            ing = self.hand_in_gun(side)
+            tw = {}
+            try:
+                FL = L._limits()[1]
+                rep_ = L._finger_report(side, FL)
+                bad_ = rep_[1] if isinstance(rep_, (list, tuple)) and len(rep_) > 1 else []
+                tw = {"bad": [b for b in bad_ if "plane" in str(b) or "twist" in str(b)]}
+            except Exception as e_:
+                tw = {"error": repr(e_)[:80]}
+            lim = dict((getattr(self, "last_limits", {}) or {}).get(side) or {})
+            fails = []
+            for d in used:
+                if not g[d]["touch"]:
+                    fails.append("%s not touching (tip %.2f cm off)" % (d, g[d]["tip_gap_cm"]))
+            if ing["digits"]:
+                fails.append("inside the gun: %s (%.2f cm)" % (", ".join(ing["digits"]), ing["deepest_cm"]))
+            if tw.get("bad"):
+                fails.append("twisted: %s" % "; ".join(str(b) for b in tw["bad"][:3]))
+            if lim.get("wrist_bend_deg", 0.0) > self.WRIST_MAX + 0.5:
+                fails.append("wrist %.1f" % lim["wrist_bend_deg"])
+            if lim.get("elbow_bend_deg", 90.0) < self.ELBOW_MIN or lim.get("elbow_bend_deg", 90.0) > self.ELBOW_MAX:
+                fails.append("elbow %.1f" % lim["elbow_bend_deg"])
+            if lim.get("elbow_under_cm", 99.0) < self.ELBOW_UNDER_CM - 0.05:
+                fails.append("elbow %.1f cm under the shoulder" % lim["elbow_under_cm"])
+            return {"digits": g, "used": used, "in_gun": ing, "twist": tw, "limits": lim, "fails": fails, "pass": not fails}
+        before = measure()
+        fixed = []
+        if fix and not before["pass"]:
+            if kind == "pinch" and any(not before["digits"][d]["touch"] for d in used):
+                # a pinch reaches its part before its digits close (the index tip to the surface)
+                H0 = Matrix(L._bw(L._n("hand", side)))
+                H1, mv_, gap_ = self.reach_mark(side, getattr(self, "_gate_mark", "handle"), H0)
+                if mv_ > 0.0:
+                    L._put_hand(side, Matrix.LocRotScale(H1.translation, H1.to_quaternion(), L._unit()))
+                    fixed.append({"reached_cm": mv_, "index_gap_cm": gap_})
+            for d in used:
+                if not before["digits"][d]["touch"]:
+                    if d == "thumb":
+                        sw = self.thumb_toward_gun(side, max_deg=90.0)
+                        fixed.append({"thumb_swing": sw})
+                    r = rules.get(d) or {"target_deg": "fist"}
+                    fixed.append({d: self.curl_to_contact(side, d, r.get("target_deg", "fist"), other=bool(r.get("other_hand")))["stopped_by"][:1]})
+            for d in before["in_gun"]["digits"]:
+                fixed.append({d + "_opened": self.open_to_clear(side, d)})
+            after = measure()
+            return {"before": before, "fixed": fixed, "after": after, "pass": after["pass"], "fails": after["fails"]}
+        return {"before": before, "fixed": fixed, "after": before, "pass": before["pass"], "fails": before["fails"]}
+
     def palm_normal_for(self, side, M):
         """The palm's normal (out of the palm) as M would set it."""
         L = self.L
@@ -1117,8 +1201,10 @@ class FakePose:
         _VR, _VF, _VU = (np.array(list(v)) for v in self.gk["view"])
         _d = (np.array(list(L._bw(L._n("hand", side)).translation)) - np.array(list(L.eye))) * 100.0
         _sh = (np.array(list(L._bw(L._n("upperarm", side)).translation)) - np.array(list(L.eye))) * 100.0
+        self._gate_mark = mark
+        gate = self.hold_gate(side, kind, rules)
         out = {"preset": src, "arm_short_cm": round(short, 2), "curls": curls, "pushed_out_cm": pushed, "hold_mend": hold_mend,
-               "reached": reached, "in_gun": in_gun,
+               "reached": reached, "in_gun": in_gun, "gate": gate,
                "hand_view_cm": [round(float(_d @ _VR), 1), round(float(_d @ _VF), 1), round(float(_d @ _VU), 1)],
                "shoulder_view_cm": [round(float(_sh @ _VR), 1), round(float(_sh @ _VF), 1), round(float(_sh @ _VU), 1)],
                "limits": dict(getattr(self, "last_limits", {}).get(side) or {}, hand_turned_deg=round(turned, 1), slid_back_cm=round(slid, 1)),

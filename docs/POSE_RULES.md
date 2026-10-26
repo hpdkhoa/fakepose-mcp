@@ -25,6 +25,7 @@ Screen coordinates: x right, y up, each -1 to 1. "Cover" is the share of the vie
 | 8 | Elbow below the shoulder, elbow bend 5 to 150, wrist within 30 of the forearm | idle: right ok, left wrist 33 (mended to ok on 2026-10-10); check and charge: both ok | right grip wrist 104, support wrist 48, handle 64, mag 55 (reported, not enforced) | FAIL |
 | 9 | Zero clipping seen from the eye, every frame | the shipped clips were mended to 0 | 0 on 594 frames | PASS |
 | 10 | Every hand has a target each action; the palm faces the held part | by construction in the hand-made clips | holds on marks by preset, fingers curl to contact | PASS (by design, not measured here) |
+| 11 | The hand gate (the owner, 2026-10-26): every hold's digits touch their part (tip within glove + 0.3 cm), none inside the mesh from any side, none twisted, the thumb on the gun, wrist within 30, elbow 5 to 150 and under the shoulder; the gate fixes what it can and reports FAIL otherwise | the hand-made holds touch and wrap | measured at every grasp (fakepose `hold_gate`), judged by Gun Kit rule 11 | to be measured on the next run |
 
 8 of 10 fail. The one cause behind 1 to 7: fakepose's idle is "the aim with a pull" of 14 cm down, 6 cm right and
 10 degrees of pitch (the preset `idle_pull`), which puts the gun out of the view. The game's rest hold keeps the bore
