@@ -41,11 +41,11 @@ My own choices, told to the owner: the rifle family keeps the first-person templ
 | Left arm and open fingers; the thumb on the gun | done to the holds' numbers; the gate now says the holds still miss (below) |
 | The round in the chamber, two variants | done: rounds.py, blueprint_round, showcase loaded/empty (`out/showcase/<gun>/`), rig Round mesh and FBX riding the running part, hands round option; the M24 round shows at the port; the M16A2's stays behind the port wall at the check's draw |
 | The hand gate | built; first entries FAIL on both guns (POSE_RULES rule 11) |
-| The mend order, then the handle pinch and the magazine cup authored | done: the mend order, the per-gun overlay (presets/guns/<gun>.json), the wrap curl (off by default: it twisted), the gate's palm-in. All holds but the bolt catch still FAIL the gate (POSE_RULES run 11). Next: author each hold per gun in the overlay, one attempt at a time, judged by the gate with a picture |
+| The mend order, then the handle pinch and the magazine cup authored | done: the mend order, the per-gun overlay (presets/guns/<gun>.json), the wrap curl (off by default: it twisted), the gate's palm-in. All holds but the bolt catch still FAIL the gate (POSE_RULES run 11). The AR15 grip passes (run 12). Next: the AR15 handguard, handle pinch, cup; then the M16A2. Tool: tune_hold.py <gun> <side:mark> <clip> <fwd> <up> <left> (run from the game folder K:/epic/ToangTown/ToangTown; the gate's way_out_cm says which way to shift) |
 
 ## Open, by the gate's numbers (2026-10-26)
 
-- AR15: grip thumb 0.77 cm off, middle 0.44; handguard fingers 1.1 to 1.9 off; handle thumb 4.36 off; magazine fingers 1.2 to 1.6 off, thumb 0.95 inside. M16A2: grip middle/ring 0.79 off, thumb 0.33 inside; handguard 0.75 to 3.5 off, index and thumb 0.78 inside; handle three fingers 1.45 inside; magazine thumb 0.97 inside.
+- AR15: grip PASS (run 12, overlay back 3.5 down 3.5, capture's finger turns kept); handguard fingers 1.1 to 1.9 off; handle thumb 4.36 off; magazine fingers 1.2 to 1.6 off, thumb 0.95 inside. M16A2: grip middle/ring 0.79 off, thumb 0.33 inside; handguard 0.75 to 3.5 off, index and thumb 0.78 inside; handle three fingers 1.45 inside; magazine thumb 0.97 inside.
 - Cause for most: the eye mend sets the whole hand back up to 3 cm after the digits closed. Fix: open the digit that is inside; move the hand only when the palm is inside.
 - The handle pinch and the magazine cup hold nothing: author them (presets), through the gate.
 - Cover 6 % against the game's 11 to 19 % (arm and model bulk); rule 7 (pulling hand on screen 19 to 24 % against the game's 44 and 58).

@@ -285,3 +285,16 @@ and the port's cover under the carry handle remain.
   `hold_report` arm angles, `clip_report` clipping.
 - Pictures: `K:\Projects\Claude\cc\report\ar15_bar_vs_fakepose.png` (the game's idle, check and charge beside
   fakepose's, same views).
+
+### Run 12 (2026-10-26): the AR15 grip through the gate
+
+| Hold | Gate | Digits (min skin gap, cm; + off, - inside) | Joints |
+|---|---|---|---|
+| AR15 r:grip (idle) | PASS | thumb -0.09, index -0.02, middle 0.26, ring 0.00, pinky 0.01 | wrist 12.1, elbow 114.6, 26.3 cm under |
+
+Authored in `presets/guns/AR15.json`: the capture's finger turns kept (`fingers_fit` true: the pack gun's grip is the
+AR15's), the hand 3.5 cm back and 3.5 cm down. Found by the gate's new `way_out_cm` (the deepest skin point of an
+inside digit and its way to the surface, in the gun's axes): the thumb's root sat in the lower receiver's rear bottom
+at gun [0.0, -14.7, -3.3], way out back 0.9 and down 0.9. Attempts that failed: up 1.0 (thumb 1.45 inside), down 1.0
+(0.66), right 1.2 (2.09: the thumb crosses the backstrap from behind). The thumb swing now stops when any segment's
+skin touches; the thumb clear swings its deepest point out. Picture: `K:/Projects/Claude/cc/report/tune/AR15_grip_gate_before_after.png`.
