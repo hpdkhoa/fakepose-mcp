@@ -26,6 +26,14 @@
     "left": 0.0
    },
    "curl": "together"
+  },
+  "l:mag_grab": {
+   "shift_cm": {
+    "forward": 0.0,
+    "up": 0.0,
+    "left": 0.0
+   },
+   "curl": "together"
   }
  }
 }

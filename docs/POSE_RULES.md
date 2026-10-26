@@ -298,3 +298,16 @@ inside digit and its way to the surface, in the gun's axes): the thumb's root sa
 at gun [0.0, -14.7, -3.3], way out back 0.9 and down 0.9. Attempts that failed: up 1.0 (thumb 1.45 inside), down 1.0
 (0.66), right 1.2 (2.09: the thumb crosses the backstrap from behind). The thumb swing now stops when any segment's
 skin touches; the thumb clear swings its deepest point out. Picture: `K:/Projects/Claude/cc/report/tune/AR15_grip_gate_before_after.png`.
+
+### Run 13 (2026-10-26): the AR15's four holds through the gate
+
+| Hold (clip) | Gate | Digits (min skin gap, cm) | Joints | What it took |
+|---|---|---|---|---|
+| r:grip (idle) | PASS | thumb -0.09, index -0.02, middle 0.26, ring 0.00, pinky 0.01 | wrist 12, elbow 115 | run 12 |
+| l:support (idle) | PASS | thumb -0.02, index 0.01, middle 0.10, ring 0.11, pinky 0.10 | wrist 16, elbow 69 | overlay up 0.5; the gate untwists a joint bent out of its plane (index end joint 26 to 0) |
+| l:handle (charge) | PASS | thumb -0.13, index 0.38 (middle 1.41, ring 3.57, pinky 6.1 not used) | wrist 9, elbow 131 | preset reshaped: fingers forward, palm down, the fingers start hooked (`start_curl`), the index hooks the latch; the thumb lies on the stock's top at gun y -27, 11 cm behind the latch (any gun surface counts for the gate; a thumb on the receiver would be closer to a real charge) |
+| l:mag_grab (reload) | PASS | thumb -0.12, index 0.12, middle 0.11, ring 0.11, pinky -0.01 | wrist 2, elbow 83, 2.3 cm under | the gate's own fixes (thumb cleared 60, pinky opened 80) |
+
+The idle: 0 clipping frames of 181 from the eye. The M16A2 at the AR15's grip shift (back 3.5, down 3.5) fails
+badly (ring and pinky 2.7 to 3.0 inside on the grip's right face, thumb 2.3): its own authoring starts from zero.
+Pictures: `K:/Projects/Claude/cc/report/tune/AR15_{grip,support,handle}_gate_before_after.png`.
