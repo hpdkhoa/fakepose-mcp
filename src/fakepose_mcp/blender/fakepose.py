@@ -76,8 +76,16 @@ class FakePose:
             fam_ok = fam_ and d_.get("family") == fam_ and d_.get("rel_to_mark") and d_["mark"] in self.facts.get("marks", {})
             if own_ or (fam_ok and key_ not in out.get("captured", {})):
                 out.setdefault("captured", {})[key_] = dict(d_, _own=own_)
+        # the gun's own tuning of its holds (the owner, 2026-10-26: per-gun authored holds, tuned by the gate's numbers):
+        # presets/guns/<gun>.json {"holds": {"side:mark": {"shift_cm": {forward, up, left}, "standoff_cm", "offset_cm",
+        # "fingers": {...}, "curl": "wrap"|"together"}}}; applied over the family's preset or the captured hold
+        gp = os.path.join(DATA, "presets", "guns", "%s.json" % self.facts["name"])
+        out["gun_tuning"] = json.load(open(gp, encoding="utf-8")).get("holds", {}) if os.path.exists(gp) else {}
         out["file"] = p
         return out
+
+    def tuning(self, side, mark):
+        return (self.presets.get("gun_tuning") or {}).get("%s:%s" % (side, mark)) or {}
 
     def preset(self, side, mark, kind):
         hs = self.presets.get("holds", {})
@@ -616,14 +624,15 @@ class FakePose:
                 if mv_ > 0.0:
                     L._put_hand(side, Matrix.LocRotScale(H1.translation, H1.to_quaternion(), L._unit()))
                     fixed.append({"reached_cm": mv_, "index_gap_cm": gap_})
-            if kind != "pinch" and all(not before["digits"][d]["touch"] for d in used if d != "thumb"):
+            if kind != "pinch" and any(not before["digits"][d]["touch"] for d in used if d != "thumb"):
                 # the whole hand sits off the part: moved in along the palm's facing until the palm's skin touches
                 H0 = Matrix(L._bw(L._n("hand", side)))
                 n_ = Vector(self.palm_normal_for(side, H0).tolist())
                 mv_ = 0.0
-                for _ in range(12):
-                    pg = float(self.gun_signed([list(self.anchor(side, "palm"))])[0])     # the palm's middle (a bone point)
-                    if pg <= self.glove + 1.0:                                              # the palm's half thickness
+                for _ in range(8):
+                    # in by a quarter cm while any used finger still misses and nothing of the hand is inside
+                    g_now = {d: self.digit_tip_gap(side, d) for d in used if d != "thumb"}
+                    if all(v <= self.glove + self.GATE_TOUCH_CM for v in g_now.values()) or self.hand_in_gun(side)["digits"]:
                         break
                     H0 = Matrix.Translation(n_ * 0.0025) @ H0
                     L._put_hand(side, Matrix.LocRotScale(H0.translation, H0.to_quaternion(), L._unit()))
@@ -896,14 +905,63 @@ class FakePose:
                     if hinge[i] is not None:
                         h = (Matrix.Rotation(math.radians(sign[i] * a[i]), 3, Vector(list(hinge[i]))) @ h)
                 L._turn_about(n, h, sign[j] * a[j], L._bw(n).translation.copy())
-        for s in range(1, steps + 1):
+        wrap = getattr(self, "_curl_mode", "wrap") == "wrap"
+        if wrap and digit == "thumb":
+            # the market's wrap: the thumb's base swings toward the index first (opposition), then its joints close
+            try:
+                self.thumb_toward_gun(side, max_deg=60.0)
+                base = [L._bw(n).copy() for n in names]
+            except Exception:
+                pass
+        # wrap mode: the joints close one after another, the base first, each stopping at its own touch (a finger
+        # round a handguard or a grip closes from the knuckle); together mode: every joint at once (a pinch, a trigger)
+        order = [0, 1, 2]
+        cur = 0
+        for s in range(1, steps * (3 if wrap else 1) + 1):
             trial = ang.copy()
-            for j in range(3):
-                if not frozen[j]:
-                    trial[j] = tgt[j] * s / steps
+            if wrap:
+                while cur < 3 and frozen[cur]:
+                    cur += 1
+                if cur >= 3:
+                    break
+                j_ = order[cur]
+                trial[j_] = min(tgt[j_], ang[j_] + tgt[j_] / steps)
+                if abs(trial[j_] - tgt[j_]) < 1e-9 and abs(ang[j_] - tgt[j_]) < 1e-9:
+                    frozen[j_] = True
+                    why[j_] = "target"
+                    continue
+            else:
+                for j in range(3):
+                    if not frozen[j]:
+                        trial[j] = tgt[j] * s / steps
             pose(trial)
             gaps = self._gaps(side, digit, oth)
             hit = [g <= self.glove and g0[j] > self.glove for j, g in enumerate(gaps)]
+            if wrap and hit[cur] if cur < 3 else False:
+                # this segment touches: its joint stops here (to a tenth of a step), the next joint goes on
+                lo_, hi_ = ang.copy(), trial.copy()
+                for _ in range(4):
+                    mid = 0.5 * (lo_ + hi_)
+                    pose(mid)
+                    if self._gaps(side, digit, oth)[cur] <= self.glove:
+                        hi_ = mid
+                    else:
+                        lo_ = mid
+                ang = lo_
+                frozen[cur] = True
+                why[cur] = "touch at segment %d" % (cur + 1)
+                continue
+            if wrap:
+                if any(hit):
+                    # a later segment touched first (the finger's tip met the part): stop every joint here
+                    ang = trial
+                    for j in range(3):
+                        if not frozen[j]:
+                            frozen[j] = True
+                            why[j] = "touch at segment %d" % (hit.index(True) + 1)
+                    break
+                ang = trial
+                continue
             if any(hit):
                 # the touch found to a tenth of the step by halving between the last clear bend and this one
                 lo_, hi_ = ang.copy(), trial.copy()
@@ -1147,6 +1205,13 @@ class FakePose:
         rule; then the eye's clip check. Returns (the hand's world matrix, the fingers' turns, the readings)."""
         L = self.L
         H, fingers, src = self.hand_on(side, mark, kind)
+        tune = self.tuning(side, mark)
+        if tune.get("shift_cm"):
+            F, U, Lf = self.gun_axes()
+            sh = tune["shift_cm"]
+            dv = (F * float(sh.get("forward", 0.0)) + U * float(sh.get("up", 0.0)) + Lf * float(sh.get("left", 0.0))) / 100.0
+            H = Matrix.Translation(Vector(dv.tolist())) @ H
+            src += "; tuned for %s: shifted %s cm" % (self.facts["name"], sh)
         cap_ = self.presets.get("captured", {}).get("%s:%s" % (side, mark))
         if fingers and cap_ is not None and cap_.get("fingers_fit") is False:
             # the capture came from another gun: its hand placement is kept, its finger turns are not (they fit that
@@ -1172,6 +1237,9 @@ class FakePose:
             into_ = np.asarray(self.hand_axes(p)[0]) if "palm_into" in p else -np.asarray(self.gun_axes()[2]) * (1.0 if side == "l" else -1.0)
             pushed = self.push_out(side, into_)
         rules = (p or {}).get("fingers") or self.presets.get("captured_fingers", {}).get("%s:%s" % (side, mark), {})
+        if tune.get("fingers"):
+            rules = dict(rules, **tune["fingers"])
+        self._curl_mode = tune.get("curl", (p or {}).get("curl", "together"))
         if fingers and not self.presets.get("captured_fingers", {}).get("%s:%s" % (side, mark)):
             # a captured hold brings the bar's finger turns for the bar's gun; on another gun each digit still closes
             # to contact by the authored preset's rules, from those turns (an open hand beside a slimmer handguard is

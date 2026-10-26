@@ -223,6 +223,29 @@ magazine): the fingers need to wrap round, which the curl to a fist target on a 
 the grip and the magazine sits inside and only opens. The pinch's thumb cannot reach under the T from a palm-down
 hand on these models. These holds need authoring on each gun's own surfaces, hold by hold, with the gate as judge.
 
+## Run 11, 2026-10-26: per-gun authored holds and the wrap curl, decoupled from Pose Lab
+
+The owner: "build both, keep fakepose decoupled from poselab." Built: `presets/guns/<gun>.json`, a per-gun overlay
+on any hold (a shift in cm along the gun's axes, finger rules, the curl mode); a wrap curl (joints one after
+another, each at its own touch, the thumb swung toward the gun first); the gate's palm-in (the hand moved in a
+quarter cm at a time while any used finger closes to its target without touching and nothing is inside). Measured:
+the wrap curl twisted the index end joint 32 degrees and reached no better, so it is off by default; the first
+shifts (guessed directions) made the pinch and the cup worse and were removed; the palm-in moved the AR15 handguard
+hand 1.75 cm and little else, since a thumb already inside stops it.
+
+| Hold | AR15 | M16A2 |
+|---|---|---|
+| Grip | FAIL: thumb 0.45, middle 0.85, ring 0.81 off | FAIL: middle, ring 0.79 off; thumb 0.33 inside |
+| Handguard | FAIL: middle 0.58, ring 1.38, pinky 1.04 off; index 0.29 inside | FAIL: 0.75 to 3.53 off; index, thumb 0.78 inside |
+| Bolt catch | PASS | PASS |
+| Handle pinch | FAIL: thumb 4.11 off | FAIL: index 1.26 off; index, middle, thumb 1.12 inside |
+| Magazine cup | FAIL: fingers 1.2 to 1.4 off; thumb 0.95 inside | FAIL: fingers 1.2 to 2.8 off; thumb 0.97 inside |
+
+Rule 11 FAIL on both. The gate holds: it refuses every one of these as a hold and says by how much. The market
+way's levers inside fakepose (a preset's place, a curl, a push in) do not close these gaps on their own; the holds
+need authoring per gun, one at a time, each attempt judged by the gate with its picture: the overlay file is the
+place for that authoring.
+
 ## The M16A2 on the AR-15 bar, 2026-10-26
 
 The captures now carry the hand against the mark point and a family (`ar_gas`): any gun of the family with the same

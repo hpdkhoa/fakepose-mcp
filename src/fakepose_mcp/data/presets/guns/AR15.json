@@ -1,0 +1,12 @@
+{
+ "contract": "fakepose-gun-tuning/1",
+ "gun": "AR15",
+ "source": "authored 2026-10-26 from the hand gate's numbers (POSE_RULES run 10): the grip's middle 0.75 cm off; the handguard's thumb, ring, pinky 0.6 to 1.5 off with the index 0.27 inside; the pinch's thumb 4.1 off; the cup's fingers 1.2 to 2.0 off with the thumb 0.95 inside; 2026-10-26 second pass: the shifts for the handguard, the pinch and the cup made them worse (guessed directions), removed; the gate's measured palm-in does that work",
+ "holds": {
+  "r:grip": {
+   "shift_cm": {
+    "left": 0.3
+   }
+  }
+ }
+}

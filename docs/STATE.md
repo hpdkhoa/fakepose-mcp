@@ -25,6 +25,7 @@ compress so the rules and what I asked still be up to date"). The owner's words 
 | 2026-10-24 | "the idle position is just the aim position with a pull"; the reload view: the port in the lower third, rolled to the eye (the M24) |
 | 2026-10-25 | The AR-15 clips are the bar for fakepose. Joint limits in the IK (wrist 30, elbow 5 to 150, under the shoulder): the market's method with a body's limits, nothing refused. Keep the cover band. Fix the rolled wrist and the clipping first |
 | 2026-10-26 | Rifles use the game camera (choice 1). Fix the left arm and the open fingers; the support thumb must close on the gun. Continue optimising. The chamber check in two variants, with the bullet and without, in the labs. A finger twisted, clipping, not touching is false physics: fix. Set up the hand gate and write it into the rules. Keep this state file. Fix the mend order, then author the two holds |
+| 2026-10-26 | fakepose stays decoupled from Pose Lab: the fast market path, no Hold Lab solver behind its gate (it shares Pose Lab's Blender library for the plumbing only). Build per-gun authored holds (presets/guns/<gun>.json, tuned by the gate's numbers) and a wrap curl (joints close one after another, each at its own touch; the thumb swings toward the index first) |
 | 2026-10-25 | The M107 is on hold until the owner reviews the rest |
 
 My own choices, told to the owner: the rifle family keeps the first-person template body (the bar's shoulders); pistols keep the anatomical body and the head-bone eye; the barrett_handle action (the right hand charges the M107); the AR check's forward-assist tap dropped; cover and joints not judged on equip, holster, run.
@@ -40,7 +41,7 @@ My own choices, told to the owner: the rifle family keeps the first-person templ
 | Left arm and open fingers; the thumb on the gun | done to the holds' numbers; the gate now says the holds still miss (below) |
 | The round in the chamber, two variants | done: rounds.py, blueprint_round, showcase loaded/empty (`out/showcase/<gun>/`), rig Round mesh and FBX riding the running part, hands round option; the M24 round shows at the port; the M16A2's stays behind the port wall at the check's draw |
 | The hand gate | built; first entries FAIL on both guns (POSE_RULES rule 11) |
-| The mend order, then the handle pinch and the magazine cup authored | mend order done; the pinch authored and the cup pushed in; both still FAIL the gate (POSE_RULES run 10): the fingers do not wrap thin parts, the thumb sits inside; hold-by-hold authoring on each gun is the next work |
+| The mend order, then the handle pinch and the magazine cup authored | done: the mend order, the per-gun overlay (presets/guns/<gun>.json), the wrap curl (off by default: it twisted), the gate's palm-in. All holds but the bolt catch still FAIL the gate (POSE_RULES run 11). Next: author each hold per gun in the overlay, one attempt at a time, judged by the gate with a picture |
 
 ## Open, by the gate's numbers (2026-10-26)
 

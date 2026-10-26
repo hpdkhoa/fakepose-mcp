@@ -1,0 +1,12 @@
+{
+ "contract": "fakepose-gun-tuning/1",
+ "gun": "M16A2",
+ "source": "authored 2026-10-26 from the hand gate's numbers (POSE_RULES run 10): the grip's middle and ring 0.79 off with the thumb 0.33 inside; the handguard 0.75 to 3.5 off with the index and thumb 0.78 inside; the pinch's index, middle, thumb 1.1 inside; the cup's fingers 1.0 to 2.5 off with the thumb 0.96 inside; 2026-10-26 second pass: the shifts for the handguard, the pinch and the cup made them worse (guessed directions), removed; the gate's measured palm-in does that work",
+ "holds": {
+  "r:grip": {
+   "shift_cm": {
+    "left": 0.3
+   }
+  }
+ }
+}
