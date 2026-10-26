@@ -1047,11 +1047,26 @@ class FakePose:
                     # the joints curl to contact
                     curls["thumb_close"] = self.thumb_toward_gun(side)
                 curls[digit] = self.curl_to_contact(side, digit, r["target_deg"], other=bool(r.get("other_hand")))
+        # the hold mended once against the eye's rule (zero clipping seen): what the eye sees inside the gun at the
+        # hold is opened or set back here, then the digits close again; a frame-by-frame fix moved the whole hand off
+        # the gun on many frames (the M16A2's idle: 143 of 181, the arm straightened to reach)
+        hold_mend = None
+        try:
+            ec0 = self.eye_clip(res=(96, 54), sides=(side,))
+            if ec0["clip_pixels"]:
+                moved, ec1 = self.unclip_seen(ec0, res=(96, 54), max_cm=3.0)
+                for digit in DIGITS:
+                    r = rules.get(digit)
+                    if r and r.get("rule") == "curl_to_contact" and ("%s:%s" % (side, digit)) in (moved.get("opened") or {}):
+                        curls[digit + "_after_mend"] = self.curl_to_contact(side, digit, r["target_deg"], other=bool(r.get("other_hand")))
+                hold_mend = {"seen_before": ec0["clip_pixels"], "seen_after": ec1["clip_pixels"], "moved": moved}
+        except Exception as e_:
+            hold_mend = {"error": repr(e_)[:200]}
         Hn = L._bw(L._n("hand", side)).copy()
         _VR, _VF, _VU = (np.array(list(v)) for v in self.gk["view"])
         _d = (np.array(list(L._bw(L._n("hand", side)).translation)) - np.array(list(L.eye))) * 100.0
         _sh = (np.array(list(L._bw(L._n("upperarm", side)).translation)) - np.array(list(L.eye))) * 100.0
-        out = {"preset": src, "arm_short_cm": round(short, 2), "curls": curls, "pushed_out_cm": pushed,
+        out = {"preset": src, "arm_short_cm": round(short, 2), "curls": curls, "pushed_out_cm": pushed, "hold_mend": hold_mend,
                "hand_view_cm": [round(float(_d @ _VR), 1), round(float(_d @ _VF), 1), round(float(_d @ _VU), 1)],
                "shoulder_view_cm": [round(float(_sh @ _VR), 1), round(float(_sh @ _VF), 1), round(float(_sh @ _VU), 1)],
                "limits": dict(getattr(self, "last_limits", {}).get(side) or {}, hand_turned_deg=round(turned, 1), slid_back_cm=round(slid, 1)),

@@ -174,6 +174,19 @@ clips' sway over-slid the hold: elbow 78, the hand under the view). AR15: 8 of 1
 left elbow at least 17 on every gun clip (walk 36, idle 39), left wrist at most 30, right wrist at most 23. Left:
 cover (6 %) and rule 7 (19 to 24 % against the game's 44 and 58).
 
+## Run 8, 2026-10-26: the hold mended once against the eye
+
+Found: the eye's frame-by-frame fix was moving a resting hand off its hold on most frames (the M16A2 idle: 143 of
+181; the AR15 magazine check: 93), and the arm straightened to follow; that was every locked elbow left. Built: a
+hold is mended once against the eye's rule at the hold (set back up to 3 cm, the digits closed again); a hand the
+fix still moves slips back along the bore until its elbow bends. M16A2 idle: 24 frames moved (was 143), walk 3
+(was 20); left elbow at least 15 in the idle, walk, fire and run (was 2.2), left wrist at most 17 there.
+
+| Gun | Rules | Left |
+|---|---|---|
+| AR15 | 8 of 10, 0 clipping on 1,178 frames | cover 6 %; rule 7 (19 to 24 % against 44 and 58) |
+| M16A2 | 7 of 10 on the resting clips (walk, run, fire); 5 of 10 on the working clips | port 53 % visible under the carry handle; the first 0.2 s of the charge and the check (the hand leaving the support: elbow locked); left wrist 33 in the empty reload; 9 clipping frames (aim 7, check 1, magazine check 1); cover 5 to 11 % |
+
 ## The M16A2 on the AR-15 bar, 2026-10-26
 
 The captures now carry the hand against the mark point and a family (`ar_gas`): any gun of the family with the same
