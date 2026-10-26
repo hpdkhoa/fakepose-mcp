@@ -1,12 +1,20 @@
 {
  "contract": "fakepose-gun-tuning/1",
  "gun": "AR15",
- "source": "authored 2026-10-26 from the hand gate's numbers (POSE_RULES run 10): the grip's middle 0.75 cm off; the handguard's thumb, ring, pinky 0.6 to 1.5 off with the index 0.27 inside; the pinch's thumb 4.1 off; the cup's fingers 1.2 to 2.0 off with the thumb 0.95 inside; 2026-10-26 second pass: the shifts for the handguard, the pinch and the cup made them worse (guessed directions), removed; the gate's measured palm-in does that work; 2026-10-26 third pass: the grip authored through the gate: the capture's finger turns kept (fingers_fit), the hand 3.5 cm back and 3.5 cm down (the thumb's deepest point was inside the lower receiver's rear at gun [0.0, -14.7, -3.3], its way out back and down); gate PASS: thumb -0.09, index -0.02, middle 0.26, ring 0.0, pinky 0.01 cm, wrist 12.1, elbow 114.6",
+ "source": "authored 2026-10-26 from the hand gate's numbers (POSE_RULES run 10): the grip's middle 0.75 cm off; the handguard's thumb, ring, pinky 0.6 to 1.5 off with the index 0.27 inside; the pinch's thumb 4.1 off; the cup's fingers 1.2 to 2.0 off with the thumb 0.95 inside; 2026-10-26 second pass: the shifts for the handguard, the pinch and the cup made them worse (guessed directions), removed; the gate's measured palm-in does that work; 2026-10-26 third pass: the grip authored through the gate: the capture's finger turns kept (fingers_fit), the hand 3.5 cm back and 3.5 cm down (the thumb's deepest point was inside the lower receiver's rear at gun [0.0, -14.7, -3.3], its way out back and down); gate PASS: thumb -0.09, index -0.02, middle 0.26, ring 0.0, pinky 0.01 cm, wrist 12.1, elbow 114.6; the handguard (l:support) up 0.5: gate PASS (thumb -0.02, index 0.01, middle 0.10, ring 0.11, pinky 0.10; the gate untwisted the index end joint from 26 to 0)",
  "holds": {
   "r:grip": {
    "shift_cm": {
     "forward": -3.5,
     "up": -3.5,
+    "left": 0.0
+   },
+   "curl": "together"
+  },
+  "l:support": {
+   "shift_cm": {
+    "forward": 0.0,
+    "up": 0.5,
     "left": 0.0
    },
    "curl": "together"

@@ -663,9 +663,67 @@ class FakePose:
                 r = rules.get(d)
                 if r and r.get("rule") == "curl_to_contact":
                     fixed.append({d + "_closed": self.curl_to_contact(side, d, r.get("target_deg", "fist"), other=bool(r.get("other_hand")))["stopped_by"][:1]})
+            # a twisted joint (bent out of its finger's plane, after the opening and closing above) is turned back into
+            # the plane about the segment before it, then the finger closes to contact again
+            mid = measure()
+            for fi, j, deg in self._twisted(side, mid):
+                fixed.append({"%s_%s_untwisted" % (fi, j): self.untwist(side, fi, j, deg)})
+                r = rules.get(fi)
+                if r and r.get("rule") == "curl_to_contact":
+                    fixed.append({fi + "_closed": self.curl_to_contact(side, fi, r.get("target_deg", "fist"), other=bool(r.get("other_hand")))["stopped_by"][:1]})
             after = measure()
             return {"before": before, "fixed": fixed, "after": after, "pass": after["pass"], "fails": after["fails"]}
         return {"before": before, "fixed": fixed, "after": before, "pass": before["pass"], "fails": before["fails"]}
+
+    def _twisted(self, side, m):
+        """(finger, joint, side_deg) for each finger joint the measure found twisted past its limit."""
+        L = self.L
+        out = []
+        try:
+            FL = L._limits()[1]
+            rep_ = L._finger_report(side, FL)[0]
+        except Exception:
+            return out
+        names = {"knuckle": "01", "middle joint": "02", "end joint": "03"}
+        for b_ in (m.get("twist") or {}).get("bad") or []:
+            b_ = str(b_)
+            if "twisted" not in b_:
+                continue
+            fi = b_.split(" ")[0]
+            j = next((v for k, v in names.items() if " %s twisted" % k in b_), None)
+            if j and ("%s_%s" % (fi, j)) in rep_:
+                out.append((fi, j, float(rep_["%s_%s" % (fi, j)][1])))
+        return out
+
+    def untwist(self, side, fi, j, side_deg, max_deg=40.0):
+        """A finger joint bent out of its plane: its bone turned about the segment before it (through the joint)
+        by the twist read, the way that lowers it; the finger's curl is kept. Returns the twist before and after."""
+        L = self.L
+        n = L._n("finger", side, fi, j)
+        prev = {"01": None, "02": "01", "03": "02"}[j]
+        pivot = L._bw(n).translation.copy()
+        if prev is None:
+            mc = L._n("finger", side, fi, "metacarpal")
+            start = L._bw(mc).translation if mc in L.arm.pose.bones else L._bw(L._n("hand", side)).translation
+        else:
+            start = L._bw(L._n("finger", side, fi, prev)).translation
+        axis = (pivot - start)
+        if axis.length < 1e-6:
+            return {"before": round(side_deg, 1), "after": round(side_deg, 1)}
+        axis.normalize()
+        deg = max(-max_deg, min(max_deg, abs(side_deg)))
+        M0 = L._bw(n).copy()
+        FL = L._limits()[1]
+        best, best_M = abs(side_deg), M0
+        for sgn in (1.0, -1.0):
+            L._set_world(n, M0)
+            L._turn_about(n, axis, sgn * deg, pivot)
+            now = abs(float(L._finger_report(side, FL)[0]["%s_%s" % (fi, j)][1]))
+            if now < best:
+                best, best_M = now, L._bw(n).copy()
+        L._set_world(n, best_M)
+        bpy.context.view_layer.update()
+        return {"before": round(side_deg, 1), "after": round(best, 1)}
 
     def thumb_clear(self, side, step_deg=3.0, max_deg=60.0):
         """A thumb whose base segment sits inside the part: swung as one about its base away from the gun (the
