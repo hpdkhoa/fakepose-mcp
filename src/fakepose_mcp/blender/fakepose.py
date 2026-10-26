@@ -443,7 +443,8 @@ class FakePose:
             M2 = Matrix.Translation(-F_ * (k * step_cm / 100.0)) @ M
             d_aim = (M2.translation - S).length
             d_rest = (M2.translation + shift - S).length
-            over = max(0.0, d_aim - reach, d_rest - reach + 0.02) * 100.0   # cm past the arm's reach, at the aim or at rest (2 cm of sway kept)
+            margin = 0.02      # 2 cm; a clip's own sway past it is taken frame by frame (the hand slips along the handguard)
+            over = max(0.0, d_aim - reach, d_rest - reach + margin) * 100.0   # cm past the arm's reach, at the aim or at rest
             if best is None or over < best[1]:
                 best = (k * step_cm, over, M2)
             if over <= 0.0:

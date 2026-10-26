@@ -164,6 +164,16 @@ capped at 4 cm, 2.5 cm deep); captured holds may carry a kind.
 view), and rule 7, whose bar value came from the approach, not the pull: to re-measure on the game's clip before it
 counts.
 
+## Run 7, 2026-10-26: rule 7 re-measured, the support slips in a sway
+
+Rule 7's bar re-measured on the game's own clips (Pose Lab, `docs/validate/measure_ar_hand_on.py`): the left hand is
+on screen on 44 % of the check frames and 58 % of the charge frames, not throughout; the rule now asks for those
+shares within 0.05. A sway that takes the support hold past the arm's reach (the walk's bob) slips the hand back
+along the handguard for that frame by the shortfall, instead of locking the elbow straight (a margin from the
+clips' sway over-slid the hold: elbow 78, the hand under the view). AR15: 8 of 10, 0 clipping on 1,178 frames,
+left elbow at least 17 on every gun clip (walk 36, idle 39), left wrist at most 30, right wrist at most 23. Left:
+cover (6 %) and rule 7 (19 to 24 % against the game's 44 and 58).
+
 ## The M16A2 on the AR-15 bar, 2026-10-26
 
 The captures now carry the hand against the mark point and a family (`ar_gas`): any gun of the family with the same
