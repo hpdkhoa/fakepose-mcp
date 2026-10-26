@@ -549,14 +549,18 @@ class FakePose:
     def digit_tip_gap(self, side, digit):
         """The digit's nearest skin to the gun: the least signed distance over its middle joint, end joint and tip
         (a finger wrapped round a handguard touches with a segment, not always with its tip)."""
-        L = self.L
-        pts = [list(self._tip_of(side, digit))]
-        for j in ("02", "03"):
-            try:
-                pts.append(list(L._bw(L._n("finger", side, digit, j)).translation))
-            except Exception:
-                pass
-        return float(min(self.gun_signed(pts)))
+        # the skin's own least gap per segment (the same measure the curl stops on), the least of the three
+        try:
+            return float(min(self._gaps(side, digit, False)))
+        except Exception:
+            L = self.L
+            pts = [list(self._tip_of(side, digit))]
+            for j in ("02", "03"):
+                try:
+                    pts.append(list(L._bw(L._n("finger", side, digit, j)).translation))
+                except Exception:
+                    pass
+            return float(min(self.gun_signed(pts)))
 
     def _tip_of(self, side, digit):
         L = self.L
