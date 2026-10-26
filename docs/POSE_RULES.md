@@ -187,6 +187,19 @@ fix still moves slips back along the bore until its elbow bends. M16A2 idle: 24 
 | AR15 | 8 of 10, 0 clipping on 1,178 frames | cover 6 %; rule 7 (19 to 24 % against 44 and 58) |
 | M16A2 | 7 of 10 on the resting clips (walk, run, fire); 5 of 10 on the working clips | port 53 % visible under the carry handle; the first 0.2 s of the charge and the check (the hand leaving the support: elbow locked); left wrist 33 in the empty reload; 9 clipping frames (aim 7, check 1, magazine check 1); cover 5 to 11 % |
 
+## Run 9, 2026-10-26: a hold touches its part, from any side
+
+The owner (2026-10-26, a side view of the M16A2 check): "I see finger twisted and clipping, also hand not touch
+charger, I don't think market work has this false physics works." Cause: the handle pinch captured from the game
+copied the pack gun's finger turns and its hand-to-handle offset (the T wing 14.6 cm off centre), so on the M16A2
+the fingers landed inside the carry handle and nothing touched the handle; the eye-only clipping rule did not see
+the side. Built: a captured hold keeps the hand's place only (digits start open, close to contact in their planes:
+no twist); a pinch or pull reaches until its index tip touches the part (the M16A2 handle: 1.25 cm, gap 0.09 cm);
+any digit the gun's mesh says is inside at a hold is opened until clear and closed again (the M16A2 handle: the ring
+finger 1.31 cm in, then 0.24). This extends rule 9 at the hold from "seen from the eye" to "measured on the mesh,
+any side"; the frame-by-frame rule stays the eye's. Left: the pinch touches but does not wrap the T (thumb and
+index closing on the wing from both sides), to author.
+
 ## The M16A2 on the AR-15 bar, 2026-10-26
 
 The captures now carry the hand against the mark point and a family (`ar_gas`): any gun of the family with the same

@@ -4,7 +4,7 @@
  "side": "l",
  "mark": "handle",
  "kind": "pinch",
- "fingers_fit": true,
+ "fingers_fit": false,
  "rel_to_mark_bone": [
   [
    -0.009253846481442451,
@@ -174,7 +174,7 @@
    0.5
   ]
  },
- "source": "the game's AR-15 charge clip at the pull (the left knuckle nearest the handle), read with Pose Lab (rig ar) on 2026-10-26: the owner's bar; the hand's frame against the gun's, moved from the pack gun's handle point [2.0, -4.2, 2.5] (against its bore line) to the AR15's handle mark [2.47, -16.07, 1.97]",
+ "source": "the game's AR-15 charge clip at the pull (the left knuckle nearest the handle), read with Pose Lab (rig ar) on 2026-10-26: the owner's bar; the hand's frame against the gun's, moved from the pack gun's handle point [2.0, -4.2, 2.5] (against its bore line) to the AR15's handle mark [2.47, -16.07, 1.97]; the owner, 2026-10-26: the fingers twisted into the carry handle and nothing touched the handle: the capture keeps the hand's place only, the hand reaches until the index pad touches the handle, the digits close to contact in their planes",
  "readings": {
   "hand_in_gun_frame_cm": [
    14.57,
@@ -184,5 +184,6 @@
   "wrist_bend_deg": 0.0,
   "elbow_bend_deg": 102.0,
   "bad": []
- }
+ },
+ "reach_mark": true
 }

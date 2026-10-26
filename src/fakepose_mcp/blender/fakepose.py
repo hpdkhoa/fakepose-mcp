@@ -505,6 +505,42 @@ class FakePose:
             self.last_limits[side]["relaxed_from_deg"] = round(bend, 1)
         return {"before": round(bend, 1), "after": after}
 
+    def reach_mark(self, side, mark, M, max_cm=8.0, step_cm=0.25):
+        """A pinch or a pull must touch its part: the hand (at M) moved along the line from its index pad to the
+        mark point until the pad is at the gun's surface (the glove counted), at most max_cm. Returns (M, cm moved,
+        the pad's gap left)."""
+        L, gk = self.L, self.gk
+        self.gun_bvh()
+        target = Vector(list(gk["mark_world"](mark)))
+        Hn = L._bw(L._n("hand", side))
+        pad_local = Hn.inverted() @ Vector(list(L._finger_tip("index", side)))      # the index tip (the pad's place on a pinch)
+        moved = 0.0
+        gap = None
+        for _ in range(int(max_cm / step_cm)):
+            pad = M @ pad_local
+            gap = float(self.gun_signed([list(pad)])[0])
+            if gap <= self.glove + 0.05:
+                break
+            d = (target - pad)
+            if d.length < 1e-4:
+                break
+            M = Matrix.Translation(d.normalized() * (step_cm / 100.0)) @ M
+            moved += step_cm
+        return M, round(moved, 2), (round(gap, 2) if gap is not None else None)
+
+    def hand_in_gun(self, side):
+        """The hand's knuckles and tips inside the gun past the glove, measured on the mesh (not through a camera):
+        the deepest, cm, and which digits. A hold is not a hold with a finger through the gun."""
+        pts = self.hand_points_for(side, Matrix(self.L._bw(self.L._n("hand", side))))
+        if not pts:
+            return {"deepest_cm": 0.0, "digits": []}
+        D = self.gun_signed(pts)
+        names = []
+        for fi in ("index", "middle", "ring", "pinky", "thumb"):
+            names += [fi] * 4
+        inside = [(float(-D[i]), names[i] if i < len(names) else "?") for i in range(len(pts)) if float(D[i]) < -self.glove]
+        return {"deepest_cm": round(max((d for d, _ in inside), default=0.0), 2), "digits": sorted(set(n for _, n in inside))}
+
     def palm_normal_for(self, side, M):
         """The palm's normal (out of the palm) as M would set it."""
         L = self.L
@@ -1019,10 +1055,15 @@ class FakePose:
             for n, q in fingers.items():
                 L.arm.pose.bones[n].rotation_quaternion = q
             bpy.context.view_layer.update()
-        turned, slid = 0.0, 0.0
+        turned, slid, reached = 0.0, 0.0, None
         if getattr(L, "_put_hand_unlimited", None) is not None:
             H, slid = self.slide_within_reach(side, mark, H)
             H, turned, _w = self.turn_hand_within(side, H)
+        _cap = self.presets.get("captured", {}).get("%s:%s" % (side, mark)) or {}
+        _pre = self.preset(side, mark, kind)[1] or {}
+        if _cap.get("reach_mark") or _pre.get("reach_mark"):
+            H, _mv, _gap = self.reach_mark(side, mark, H)
+            reached = {"moved_cm": _mv, "pad_gap_cm": _gap}
         short = L._put_hand(side, H)
         key, p = self.preset(side, mark, kind)
         pushed = None
@@ -1047,6 +1088,16 @@ class FakePose:
                     # the joints curl to contact
                     curls["thumb_close"] = self.thumb_toward_gun(side)
                 curls[digit] = self.curl_to_contact(side, digit, r["target_deg"], other=bool(r.get("other_hand")))
+        # a finger through the gun is not a hold, from any side (the owner, 2026-10-26: "I don't think market work has
+        # this false physics"): the digits the mesh says are inside are opened until clear, then closed to contact
+        in_gun = self.hand_in_gun(side)
+        if in_gun["digits"]:
+            for dg in in_gun["digits"]:
+                curls[dg + "_opened_cm"] = self.open_to_clear(side, dg)
+                r = rules.get(dg)
+                if r and r.get("rule") == "curl_to_contact":
+                    curls[dg + "_closed_again"] = self.curl_to_contact(side, dg, r["target_deg"], other=bool(r.get("other_hand")))
+            in_gun = dict(in_gun, after=self.hand_in_gun(side))
         # the hold mended once against the eye's rule (zero clipping seen): what the eye sees inside the gun at the
         # hold is opened or set back here, then the digits close again; a frame-by-frame fix moved the whole hand off
         # the gun on many frames (the M16A2's idle: 143 of 181, the arm straightened to reach)
@@ -1067,6 +1118,7 @@ class FakePose:
         _d = (np.array(list(L._bw(L._n("hand", side)).translation)) - np.array(list(L.eye))) * 100.0
         _sh = (np.array(list(L._bw(L._n("upperarm", side)).translation)) - np.array(list(L.eye))) * 100.0
         out = {"preset": src, "arm_short_cm": round(short, 2), "curls": curls, "pushed_out_cm": pushed, "hold_mend": hold_mend,
+               "reached": reached, "in_gun": in_gun,
                "hand_view_cm": [round(float(_d @ _VR), 1), round(float(_d @ _VF), 1), round(float(_d @ _VU), 1)],
                "shoulder_view_cm": [round(float(_sh @ _VR), 1), round(float(_sh @ _VF), 1), round(float(_sh @ _VU), 1)],
                "limits": dict(getattr(self, "last_limits", {}).get(side) or {}, hand_turned_deg=round(turned, 1), slid_back_cm=round(slid, 1)),
