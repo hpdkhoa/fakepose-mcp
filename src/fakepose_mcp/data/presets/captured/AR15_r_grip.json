@@ -3,7 +3,46 @@
  "gun": "AR15",
  "side": "r",
  "mark": "grip",
- "fingers_fit": true,
+ "fingers_fit": false,
+ "curls_deg": {
+  "index": [
+   -15.0,
+   89.0,
+   -5.0
+  ],
+  "middle": [
+   83.0,
+   74.0,
+   88.0
+  ],
+  "ring": [
+   81.0,
+   71.0,
+   88.0
+  ],
+  "pinky": [
+   65.0,
+   64.0,
+   88.0
+  ],
+  "thumb": [
+   0.0,
+   58.0,
+   88.0
+  ]
+ },
+ "thumb_report": {
+  "cmc_spread_deg": 46,
+  "cmc_palmar_deg": 50,
+  "thumb_02": [
+   58,
+   -25
+  ],
+  "thumb_03": [
+   88,
+   -20
+  ]
+ },
  "rel_to_mark_bone": [
   [
    -0.0007596281357109547,
@@ -180,10 +219,9 @@
    -10.78,
    -4.81
   ],
-  "wrist_bend_deg": 12.0,
-  "elbow_bend_deg": 101.0,
-  "elbow_below_shoulder_cm": 25.7,
+  "wrist_bend_deg": 12,
+  "elbow_bend_deg": 101,
+  "elbow_below_shoulder_cm": null,
   "bad": []
- },
- "fingers_fit_note": "2026-10-26: the pack gun's pistol grip is the AR15's (one family): the game's finger turns, the thumb over the left as the bar has it, are kept and only closed or opened to contact"
+ }
 }

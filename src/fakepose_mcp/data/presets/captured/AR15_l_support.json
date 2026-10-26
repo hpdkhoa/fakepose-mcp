@@ -4,6 +4,45 @@
  "side": "l",
  "mark": "support",
  "fingers_fit": false,
+ "curls_deg": {
+  "index": [
+   -27.0,
+   13.0,
+   11.0
+  ],
+  "middle": [
+   22.0,
+   55.0,
+   3.0
+  ],
+  "ring": [
+   51.0,
+   50.0,
+   88.0
+  ],
+  "pinky": [
+   53.0,
+   33.0,
+   -6.0
+  ],
+  "thumb": [
+   0.0,
+   4.0,
+   16.0
+  ]
+ },
+ "thumb_report": {
+  "cmc_spread_deg": 38,
+  "cmc_palmar_deg": 48,
+  "thumb_02": [
+   4,
+   20
+  ],
+  "thumb_03": [
+   16,
+   14
+  ]
+ },
  "rel_to_mark_bone": [
   [
    -0.0025240574032068253,
@@ -180,11 +219,11 @@
    14.47,
    -0.63
   ],
-  "wrist_bend_deg": 30.0,
-  "elbow_bend_deg": 27.0,
-  "elbow_below_shoulder_cm": 5.8,
+  "wrist_bend_deg": 30,
+  "elbow_bend_deg": 27,
+  "elbow_below_shoulder_cm": null,
   "bad": [
-   "wrist bent 30 off the forearm (most 30)"
+   "upper arm turned 71 inward (at most 70)"
   ]
  }
 }

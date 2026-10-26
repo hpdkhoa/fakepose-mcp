@@ -9,13 +9,21 @@ import sys
 
 import numpy as np
 
-sys.path.insert(0, r"K:\epic\ToangTown\ToangTown\Tools\poselab")
-import lab  # noqa: E402
+sys.path.insert(0, r"K:\Projects\gitHub\poselab-mcp\src")
+sys.path.insert(0, "K:/Projects/gitHub/poselab-mcp/src/poselab_mcp/blender")
+import lab  # noqa: E402    (poselab-mcp's lab: the game's Tools/poselab copy has no finger report)
 from mathutils import Matrix, Quaternion, Vector  # noqa: E402
 
 project, facts_path, out_dir = sys.argv[sys.argv.index("--") + 1:][:3]
 facts = json.load(open(facts_path, encoding="utf-8"))
-L = lab.Lab(project)
+# poselab-mcp's lab resolves a rig's folder against the rigs file; the game's rigs.json folders are against the project
+_rigs = json.load(open(os.path.join(project, "Tools", "poselab", "rigs.json"), encoding="utf-8"))
+for _k, _v in _rigs.items():
+    if isinstance(_v, dict) and _v.get("folder") and not os.path.isabs(_v["folder"]):
+        _v["folder"] = os.path.join(project, _v["folder"])
+_rf = os.path.join(out_dir, "_rigs_abs.json")
+json.dump(_rigs, open(_rf, "w", encoding="utf-8"), indent=1)
+L = lab.Lab(_rf, os.path.join(project, "Saved", "PoseLab", "capture"))
 L.load_rig("ar")
 # the mended idle (2026-10-10: the pack's idle with its anatomy faults mended), bone data
 mend = json.load(open(os.path.join(project, "Saved", "PoseLab", "grip", "mend", "ar_idle_mended.pose.json")))
@@ -67,7 +75,15 @@ for s, mark, game_pt in (("r", "grip", grip_game), ("l", "support", support_game
     fingers = {pb.name: list(pb.rotation_quaternion) for pb in L.arm.pose.bones
                if any(pb.name.startswith(f + "_") for f in FINGERS) and pb.name.endswith("_" + s)}
     an = L.anatomy(s)[s]
-    rec = {"contract": "fakepose-captured/1", "gun": facts["name"], "side": s, "mark": mark, "fingers_fit": False,
+    # the bar's finger shape as joint angles (the finger report's curl per joint, the thumb report's), not raw turns:
+    # a turn copied onto another rig read 139 degrees at a knuckle (2026-10-26); an angle carries over
+    FL_ = L._limits()[1]
+    curls_ = L._finger_report(s, FL_)[0]
+    thumb_ = L._thumb_report(s, L._thumb_limits())[0]
+    curls_deg = {fi: [float(curls_["%s_%s" % (fi, j)][0]) for j in ("01", "02", "03")] for fi in ("index", "middle", "ring", "pinky")}
+    curls_deg["thumb"] = [0.0] + [float((thumb_.get("thumb_" + j) or [0.0])[0]) for j in ("02", "03")]
+    rec = {"contract": "fakepose-captured/1", "gun": facts["name"], "side": s, "mark": mark, "fingers_fit": False, "curls_deg": curls_deg,
+           "thumb_report": {k: (list(v) if isinstance(v, (list, tuple)) else v) for k, v in thumb_.items()},
            "rel_to_mark_bone": [list(r) for r in rel2], "rel_to_mark": [list(r) for r in rel_mark], "family": "ar_gas", "fingers": fingers,
            "source": "the game's AR-15 idle (the pack's hold, mended 2026-10-10), read with Pose Lab (rig ar) on 2026-10-26: the owner's bar (POSE_RULES.md); "
                      "the hand's frame against the gun's, moved from the pack gun's %s point %s to the AR15's %s mark %s (gun cm)" % (mark, [round(v, 2) for v in game_pt], mark, ours),

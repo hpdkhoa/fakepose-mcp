@@ -630,7 +630,15 @@ class FakePose:
                 FL = L._limits()[1]
                 rep_ = L._finger_report(side, FL)
                 bad_ = rep_[1] if isinstance(rep_, (list, tuple)) and len(rep_) > 1 else []
-                tw = {"bad": [b for b in bad_ if "plane" in str(b) or "twist" in str(b)]}
+                # every fault the report names: twisted, bent backward (hyperextended), curled past its range. The
+                # owner's rule (no hyperextended or twisted finger); until 2026-10-26 this kept the twisted lines only
+                # and let a joint bent backward pass (the owner saw it on the M16A2 grip)
+                tw = {"bad": [str(b) for b in bad_]}
+                try:
+                    tb_ = L._thumb_report(side, L._thumb_limits())[1]
+                    tw["bad"] += [str(b) for b in (tb_ or [])]
+                except Exception:
+                    pass
             except Exception as e_:
                 tw = {"error": repr(e_)[:80]}
             lim = dict((getattr(self, "last_limits", {}) or {}).get(side) or {})
@@ -641,7 +649,7 @@ class FakePose:
             if ing["digits"]:
                 fails.append("inside the gun: %s (%.2f cm)" % (", ".join(ing["digits"]), ing["deepest_cm"]))
             if tw.get("bad"):
-                fails.append("twisted: %s" % "; ".join(str(b) for b in tw["bad"][:3]))
+                fails.append("finger fault: %s" % "; ".join(str(b) for b in tw["bad"][:3]))
             if lim.get("wrist_bend_deg", 0.0) > self.WRIST_MAX + 0.5:
                 fails.append("wrist %.1f" % lim["wrist_bend_deg"])
             if lim.get("elbow_bend_deg", 90.0) < self.ELBOW_MIN or lim.get("elbow_bend_deg", 90.0) > self.ELBOW_MAX:
@@ -693,6 +701,12 @@ class FakePose:
             # a twisted joint (bent out of its finger's plane, after the opening and closing above) is turned back into
             # the plane about the segment before it, then the finger closes to contact again
             mid = measure()
+            for fi, j, curl in self._hyperextended(side, mid):
+                fixed.append({"%s_%s_straightened" % (fi, j): self.straighten(side, fi, j, curl)})
+                r = rules.get(fi)
+                if r and r.get("rule") == "curl_to_contact":
+                    fixed.append({fi + "_closed": self.curl_to_contact(side, fi, r.get("target_deg", "fist"), other=bool(r.get("other_hand")))["stopped_by"][:1]})
+            mid = measure()
             for fi, j, deg in self._twisted(side, mid):
                 fixed.append({"%s_%s_untwisted" % (fi, j): self.untwist(side, fi, j, deg)})
                 r = rules.get(fi)
@@ -721,6 +735,37 @@ class FakePose:
             if j and ("%s_%s" % (fi, j)) in rep_:
                 out.append((fi, j, float(rep_["%s_%s" % (fi, j)][1])))
         return out
+
+    def _hyperextended(self, side, m):
+        """(finger, joint, curl) for each finger joint the measure found bent backward past its range."""
+        L = self.L
+        out = []
+        try:
+            FL = L._limits()[1]
+            rep_ = L._finger_report(side, FL)[0]
+        except Exception:
+            return out
+        names = {"knuckle": "01", "middle joint": "02", "end joint": "03"}
+        for b_ in (m.get("twist") or {}).get("bad") or []:
+            if "backward" not in b_:
+                continue
+            fi = b_.split(" ")[0]
+            j = next((v for k, v in names.items() if " %s bent" % k in b_), None)
+            if j and ("%s_%s" % (fi, j)) in rep_:
+                out.append((fi, j, float(rep_["%s_%s" % (fi, j)][0])))
+        return out
+
+    def straighten(self, side, fi, j, curl):
+        """A finger joint bent backward (its curl under its range's floor): bent toward the palm to the floor, the
+        other joints kept. Returns the curl before and after."""
+        L = self.L
+        FL = L._limits()[1]
+        lo = float(FL[j][0])
+        degs = [0.0, 0.0, 0.0]
+        degs[("01", "02", "03").index(j)] = lo - curl
+        self.set_curl(side, fi, degs)
+        after = float(L._finger_report(side, FL)[0]["%s_%s" % (fi, j)][0])
+        return {"before": round(curl, 1), "after": round(after, 1)}
 
     def untwist(self, side, fi, j, side_deg, max_deg=40.0):
         """A finger joint bent out of its plane: its bone turned about the segment before it (through the joint)
@@ -1013,7 +1058,89 @@ class FakePose:
             return out
         return dist
 
+    JOINTS = ("01", "02", "03")
+
+    def _read_curls(self, side, digit):
+        """A digit's joint readings now (degrees, the finger report's curl; the thumb's knuckle and end joint)."""
+        L = self.L
+        if digit == "thumb":
+            tr = L._thumb_report(side, L._thumb_limits())[0]
+            return [0.0] + [float((tr.get("thumb_" + j) or [0.0])[0]) for j in ("02", "03")]
+        rep_ = L._finger_report(side, L._limits()[1])[0]
+        return [float(rep_["%s_%s" % (digit, j)][0]) for j in self.JOINTS]
+
+    def _ranges(self, digit):
+        L = self.L
+        if digit == "thumb":
+            TL = L._thumb_limits()
+            return [(-180.0, 180.0)] + [(float(TL[j][0]), float(TL[j][1])) for j in ("02", "03")]
+        FL = L._limits()[1]
+        return [(float(FL[j][0]), float(FL[j][1])) for j in self.JOINTS]
+
+    def _pose_abs(self, side, digit, readings):
+        """A digit's joints set to the given readings (degrees), each clamped to its range, with Pose Lab's measured
+        setters (_set_curl, _set_thumb_bend): what is set is what the gate reads. A turn about a world hinge, added
+        up over joints, read 138 degrees at a knuckle set to 100 (2026-10-26)."""
+        L = self.L
+        rg = self._ranges(digit)
+        r = [min(hi, max(lo, float(v))) for v, (lo, hi) in zip(readings, rg)]
+        if digit == "thumb":
+            L._set_thumb_bend(side, r[1], r[2], L._thumb_limits())
+        else:
+            FL = L._limits()[1]
+            for _ in range(2):
+                for j, t_ in zip(self.JOINTS, r):
+                    L._set_curl(side, digit, j, t_, FL)
+        bpy.context.view_layer.update()
+        return r
+
+    def set_thumb_base(self, side, spread, palmar, tol=1.5, step=3.0, rounds=40):
+        """The thumb's base joint (the metacarpal) turned until its measured spread from the index metacarpal and its
+        angle in front of the palm read spread and palmar (degrees): two turns about the hand's axes, each step the
+        sign that lowers the error (Pose Lab measures, it has no setter for this joint)."""
+        L = self.L
+        n = L._n("finger", side, "thumb", "01")
+        TL = L._thumb_limits()
+        across, _k = L._hand_frame(side)
+        wrist = L._bw(L._n("hand", side)).translation
+        mid = L._bw(L._n("finger", side, "middle", "01")).translation
+        palm_n = across.cross((mid - wrist).normalized())
+        palm_n = palm_n.normalized() if palm_n.length > 1e-9 else Vector((0, 0, 1))
+        axes = (palm_n, across.normalized())
+
+        def err():
+            r = L._thumb_report(side, TL)[0]
+            return (r["cmc_spread_deg"] - spread, r["cmc_palmar_deg"] - palmar)
+        e = err()
+        for _ in range(rounds):
+            if abs(e[0]) <= tol and abs(e[1]) <= tol:
+                break
+            moved = False
+            for ax in axes:
+                base = L._bw(n).translation.copy()
+                M0 = L._bw(n).copy()
+                best = (abs(e[0]) + abs(e[1]), None, e)
+                for sg in (1.0, -1.0):
+                    L._set_world(n, M0)
+                    L._turn_about(n, ax, sg * step, base)
+                    e2 = err()
+                    if abs(e2[0]) + abs(e2[1]) < best[0] - 0.1:
+                        best = (abs(e2[0]) + abs(e2[1]), L._bw(n).copy(), e2)
+                L._set_world(n, best[1] if best[1] is not None else M0)
+                if best[1] is not None:
+                    e, moved = best[2], True
+            if not moved:
+                break
+        bpy.context.view_layer.update()
+        r = L._thumb_report(side, TL)[0]
+        return {"spread_deg": r["cmc_spread_deg"], "palmar_deg": r["cmc_palmar_deg"], "asked": [spread, palmar]}
+
     def set_curl(self, side, digit, degs):
+        """A digit's joints bent by degs (toward the palm, degrees, from where they are), each inside its range."""
+        now = self._read_curls(side, digit)
+        return [round(v, 1) for v in self._pose_abs(side, digit, [n + float(d) for n, d in zip(now, degs)])]
+
+    def set_curl_old(self, side, digit, degs):
         """A finger's three joints bent by degs (toward the palm, degrees, from where they are): the shape a hold
         starts from (a hook before a pull reaches its latch), with curl_to_contact's hinges and signs."""
         L = self.L
@@ -1102,24 +1229,19 @@ class FakePose:
                 frozen[j] = True
                 why[j] = "already touching on the preset (%.2f cm)" % g0[j]
 
+        start = self._read_curls(side, digit)
+        rg_ = self._ranges(digit)
+        tgt = np.array([min(float(t_), hi - st) for t_, st, (lo, hi) in zip(tgt, start, rg_)])     # nothing past its range
+
         def pose(a):
-            for n_, M_ in zip(names, base):
-                L._set_world(n_, M_)
-            for j, n in enumerate(names):
-                if hinge[j] is None or abs(a[j]) < 1e-9:
-                    continue
-                # the hinge rides the joints before it: turned with them
-                h = Vector(list(hinge[j]))
-                for i in range(j):
-                    if hinge[i] is not None:
-                        h = (Matrix.Rotation(math.radians(sign[i] * a[i]), 3, Vector(list(hinge[i]))) @ h)
-                L._turn_about(n, h, sign[j] * a[j], L._bw(n).translation.copy())
+            # absolute: each joint at its start reading plus a, set and read with the gate's own measure
+            self._pose_abs(side, digit, [st + float(aj) for st, aj in zip(start, a)])
         wrap = getattr(self, "_curl_mode", "wrap") == "wrap"
         if wrap and digit == "thumb":
             # the market's wrap: the thumb's base swings toward the index first (opposition), then its joints close
             try:
                 self.thumb_toward_gun(side, max_deg=60.0)
-                base = [L._bw(n).copy() for n in names]
+                start = self._read_curls(side, digit)
             except Exception:
                 pass
         # wrap mode: the joints close one after another, the base first, each stopping at its own touch (a finger
@@ -1145,7 +1267,9 @@ class FakePose:
                         trial[j] = tgt[j] * s / steps
             pose(trial)
             gaps = self._gaps(side, digit, oth)
-            hit = [g <= self.glove and g0[j] > self.glove for j, g in enumerate(gaps)]
+            # a segment touches when it reaches the glove, or, already touching at the start, when the joints before
+            # it push it deeper (a pinky's end segment went 1.2 cm through the grip while its own joint stood still)
+            hit = [g <= self.glove and (g0[j] > self.glove or g < g0[j] - 0.05) for j, g in enumerate(gaps)]
             if wrap and hit[cur] if cur < 3 else False:
                 # this segment touches: its joint stops here (to a tenth of a step), the next joint goes on
                 lo_, hi_ = ang.copy(), trial.copy()
@@ -1178,7 +1302,7 @@ class FakePose:
                     mid = 0.5 * (lo_ + hi_)
                     pose(mid)
                     gm = self._gaps(side, digit, oth)
-                    if any(g <= self.glove and g0[j] > self.glove for j, g in enumerate(gm)):
+                    if any(g <= self.glove and (g0[j] > self.glove or g < g0[j] - 0.05) for j, g in enumerate(gm)):
                         hi_ = mid
                     else:
                         lo_ = mid
@@ -1370,8 +1494,35 @@ class FakePose:
                         h = Matrix.Rotation(math.radians(-sign[i] * a), 3, hinge[i]) @ h
                 L._turn_about(n, h, -sign[j] * a, L._bw(n).translation.copy())
             bpy.context.view_layer.update()
+        # each joint opens at most to its range's floor (straight): the market's clamp; a joint past straight is a
+        # finger bent backward (the owner's rule), and the gate would fail it anyway
+        cap = [max_deg] * 3
+        try:
+            if digit == "thumb":
+                TL = L._thumb_limits()
+                now = L._thumb_report(side, TL)[0]
+                for i, j in enumerate(("01", "02", "03")):
+                    c_ = now.get("thumb_" + j)
+                    if c_ is not None and isinstance(TL.get(j), (list, tuple)):
+                        cap[i] = max(0.0, float(c_[0]) - float(TL[j][0]))
+            else:
+                FL = L._limits()[1]
+                now = L._finger_report(side, FL)[0]
+                for i, j in enumerate(("01", "02", "03")):
+                    cap[i] = max(0.0, float(now["%s_%s" % (digit, j)][0]) - float(FL[j][0]))
+        except Exception:
+            pass
+        start_ = self._read_curls(side, digit)
+        rg_ = self._ranges(digit)
+        cap = [max(0.0, st - lo) for st, (lo, hi) in zip(start_, rg_)]
+        if digit == "thumb":
+            cap[0] = 0.0
+
+        def pose(a):      # noqa: F811
+            # absolute: each joint at its start reading minus a, never under its floor (straight)
+            self._pose_abs(side, digit, [st - min(float(a), c_) for st, c_ in zip(start_, cap)])
         a = 0.0
-        while self.digit_depth(side, digit) > self.glove and a < max_deg:
+        while self.digit_depth(side, digit) > self.glove and a < max_deg and a < max(cap):
             a += step_deg
             pose(a)
         return a
@@ -1431,12 +1582,38 @@ class FakePose:
                 L.arm.pose.bones[n].rotation_quaternion = q
             bpy.context.view_layer.update()
         turned, slid, reached = 0.0, 0.0, None
+        curls = {}
         if getattr(L, "_put_hand_unlimited", None) is not None:
             H, slid = self.slide_within_reach(side, mark, H)
             H, turned, _w = self.turn_hand_within(side, H)
         _cap = self.presets.get("captured", {}).get("%s:%s" % (side, mark)) or {}
         _pre = self.preset(side, mark, kind)[1] or {}
         start_curl = dict(_pre.get("start_curl") or {}, **(tune.get("start_curl") or {}))
+        if _cap.get("curls_deg") and not fingers:
+            # the bar's finger shape carried as joint angles: each joint bent from the open hand's reading to the
+            # captured reading (the gate reads the same angles it checks)
+            try:
+                L._put_hand(side, H)
+                FL_ = L._limits()[1]
+                TL_ = L._thumb_limits()
+                tr_ = _cap.get("thumb_report") or {}
+                if tr_.get("cmc_spread_deg") is not None:
+                    curls["captured_thumb_base"] = self.set_thumb_base(side, float(tr_["cmc_spread_deg"]), float(tr_["cmc_palmar_deg"]))
+                for _pass in range(2):            # a later joint moves the planes the earlier ones are read in
+                    for dg, cd in _cap["curls_deg"].items():
+                        if dg == "thumb":
+                            L._set_thumb_bend(side, float(cd[1]), float(cd[2]), TL_)
+                        else:
+                            for j, t_ in zip(("01", "02", "03"), cd):
+                                L._set_curl(side, dg, j, float(t_), FL_)
+                bpy.context.view_layer.update()
+                got_ = L._finger_report(side, FL_)[0]
+                gt_ = L._thumb_report(side, TL_)[0]
+                curls["captured_curls_deg"] = {k: [round(float(v), 1) for v in vv] for k, vv in _cap["curls_deg"].items()}
+                curls["captured_curls_read_deg"] = dict({fi: [round(float(got_["%s_%s" % (fi, j)][0])) for j in ("01", "02", "03")] for fi in ("index", "middle", "ring", "pinky") if "%s_01" % fi in got_},
+                                                        thumb=[0, round(float((gt_.get("thumb_02") or [0])[0])), round(float((gt_.get("thumb_03") or [0])[0]))])
+            except Exception as e_:
+                curls["captured_curls_error"] = repr(e_)[:160]
         if start_curl:
             # the hold's starting shape (a hook before the reach: the pad close under the palm, so the palm lands by
             # the part, not a straight finger's length behind it)
@@ -1461,7 +1638,6 @@ class FakePose:
             # to contact by the authored preset's rules, from those turns (an open hand beside a slimmer handguard is
             # not a hold)
             rules = (p or {}).get("fingers") or {}
-        curls = {}
         # a digit that starts inside the part (the open hand's own curl already past the surface) opens first, then
         # closes to contact from outside: a finger through the gun is not a hold, from any side (the owner, 2026-10-26)
         in_gun0 = self.hand_in_gun(side)
