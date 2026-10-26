@@ -130,17 +130,28 @@
    }
   },
   "l:catch": {
-   "source": "authored (fakepose 0.1, 2026-10-24): the palm slapping the bolt catch on the lower's left, the fingers flat and up",
+   "source": "authored (fakepose 0.1, 2026-10-24): the palm slapping the bolt catch on the lower's left, the fingers flat and up; 2026-10-27: the thumb lies beside the index in the palm's plane (thumb_base spread 20, palmar 5), straight: a thumb folded across the palm sat 1 cm inside the receiver (the gate); the fingers point forward and up (0.8, 0.6), not straight up: straight up bent the wrist 34 to 37 off the forearm (the limit 30)",
    "contact": "palm_skin",
    "palm_into": {
     "left": -1.0
    },
    "fingers_toward": {
-    "up": 1.0,
-    "forward": 0.3
+    "up": 0.6,
+    "forward": 0.8
    },
    "push_out": true,
-   "fingers": {}
+   "fingers": {},
+   "thumb_base": {
+    "spread_deg": 20.0,
+    "palmar_deg": 5.0
+   },
+   "start_curl": {
+    "thumb": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
   },
   "l:handle": {
    "source": "authored 2026-10-26 (the owner: author the pinch through the gate), second shape: the left hand over the receiver's rear, palm down, the fingers pointing forward along the gun; the index hooks the charging handle's left wing from the front with its end joints and pulls, the thumb lies on the receiver's top beside the handle (a real charge hooks the latch, the thumb rests on the receiver); the first shape (fingers across, the T pinched from both sides) left the thumb 6.5 cm in the air; the fingers start hooked (start_curl) so the reach lands the palm by the latch, not 9 cm behind it over the stock",

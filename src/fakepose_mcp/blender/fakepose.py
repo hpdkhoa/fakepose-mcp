@@ -1566,6 +1566,14 @@ class FakePose:
         """A hold the market way: the hand on its preset, the arm by IK, each digit closed to contact by its preset's
         rule; then the eye's clip check. Returns (the hand's world matrix, the fingers' turns, the readings)."""
         L = self.L
+        # every hold starts from the open hand (the market way: a hold does not depend on the hold before it; in the
+        # full run the handle pinch started from the bolt catch's hand and its thumb ended 0.83 cm inside, where the
+        # hold-only run passed, 2026-10-27)
+        try:
+            L.natural_open(side, index_extended=False)
+            bpy.context.view_layer.update()
+        except Exception as e_:
+            self.report.setdefault("notes", []).append("natural_open %s: %r" % (side, e_))
         H, fingers, src = self.hand_on(side, mark, kind)
         tune = self.tuning(side, mark)
         if tune.get("shift_cm"):
