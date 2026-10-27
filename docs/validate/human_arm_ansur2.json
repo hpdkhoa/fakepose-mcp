@@ -1,0 +1,54 @@
+{
+ "source": "ANSUR II (2012) men, as shown by the ergoassessment.cam ANSUR 2 data explorer (read 2026-10-27); cm; 5th / 50th / 95th percentile",
+ "hand_length": [
+  17.7,
+  19.3,
+  21.0
+ ],
+ "hand_breadth": [
+  8.1,
+  8.8,
+  9.6
+ ],
+ "shoulder_elbow_length": [
+  33.4,
+  36.3,
+  39.4
+ ],
+ "forearm_hand_length": [
+  44.4,
+  48.0,
+  52.0
+ ],
+ "radiale_stylion_length": [
+  24.4,
+  26.7,
+  29.5
+ ],
+ "biceps_circumference_flexed": [
+  30.3,
+  35.7,
+  41.8
+ ],
+ "forearm_circumference_flexed": [
+  27.5,
+  31.0,
+  34.8
+ ],
+ "wrist_circumference": [
+  16.2,
+  17.6,
+  19.1
+ ],
+ "span": [
+  168.0,
+  181.2,
+  195.7
+ ],
+ "stature": [
+  164.8,
+  175.5,
+  187.0
+ ],
+ "notes": "shoulder-elbow: acromion to the elbow's bottom (olecranon); radiale-stylion: the elbow's radial head to the wrist's styloid; hand length: the wrist crease (stylion) to the middle finger's tip"
+}

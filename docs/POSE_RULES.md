@@ -367,3 +367,32 @@ Fixes on the way: the M16A2 handle pinch failed in the full run (the thumb's tip
 swing could not lift it): the gate now opens such a thumb to straight and lays it back; the handle preset's thumb
 starts straight beside the index (thumb_base 30/10). The owner's rule holds: a hold is not shown without its gate
 numbers; rule 8's elbow lock on the M16A2 is a wall break reported, not tuned through.
+
+### Run 18 (2026-10-27): the M24 on the current engine; the owner's shoulder-back move
+
+The M24 (two runs under the 10 minute rule, 11 clips, 1,045 frames): 0 clipping frames seen from the eye; rules 8 of
+11 (open: 6 port, 7 hand on screen, 11). Rule 11 FAIL: the grip's pinky 1.32 cm off and its wrist 34.5 to 36.3; the
+support's thumb 1.46 cm inside. The video's M24 clip (2026-10-25) was made before any of this and showed the
+support hand through the gun; this run shows 0 seen clipping but the holds still fail the gate.
+
+The owner's idea ("move the shoulder back so the arm is extend then the wrist can be flatten"), built as
+`shoulder_back` in the IK (the collarbone turned so the shoulder moves back along the view, at most
+SHOULDER_BACK_MAX_CM from the template's shoulder, counted from the template each frame; the limit 4 cm is mine
+until the owner sets it; job option `shoulder_back_max_cm`), measured on the M24 grip at the idle:
+
+| Shoulder back, cm | Wrist bend | Elbow bend | Gate |
+|---|---|---|---|
+| 0 | 34.5 | 120.6 | FAIL: pinky 1.32 off, wrist |
+| 4.2 (limit 4) | 36.3 | 113.1 | FAIL: same |
+| 8.2 (limit 8) | 35.9 | 105.0 | FAIL: same |
+
+The arm extends as the owner said (the elbow opens 16 degrees over 8 cm) but the wrist does not flatten: the wrist
+bend here is set by the hand's authored facing on the M24's raked grip against the forearm's line, not by the reach.
+The move is kept (it does what it says for the elbow) and reported. Picture:
+`K:/Projects/Claude/cc/report/tune/M24_grip_shoulder_scan.png`.
+
+The arms rig against a real arm (`docs/validate/arms_rig_vs_human.md`, ANSUR II men): the upper arm bone 27.8 cm
+against about 32.8 (5 cm, 15 % short); the forearm 27.2 against 26.7; the hand 19.1 against 19.3; the breadth 8.6
+against 8.8; the upper arm girth 34.8 against about 33 relaxed; the forearm girth 26.4 against about 29 (slim). The
+owner's reading holds: the arm reaches 5 cm less than a man's, which is why the support hand slides back 14 to 17
+cm on every rifle.

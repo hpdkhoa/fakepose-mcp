@@ -347,6 +347,11 @@ class FakePose:
     # --- joint limits in the IK (the owner, 2026-10-25: "go with the joint limits") -----------------------------------
     WRIST_MAX, ELBOW_MIN, ELBOW_MAX, ELBOW_UNDER_CM = 30.0, 5.0, 150.0, 2.0
     TURN_MAX = 40.0            # the hand's turn on its palm's normal, at most (a cant of the hand on a grip)
+    # the owner (2026-10-27): "move the shoulder back so the arm is extend then the wrist can be flatten": when no
+    # elbow and no hand turn keeps the wrist inside, or the arm is short, the collarbone turns so the shoulder moves
+    # back (toward the body, against the view's forward), at most SHOULDER_BACK_MAX_CM from the template's place. The
+    # limit is mine until the owner sets it: 4 cm, about a collarbone's retraction (the scapula slides 2 to 5 cm).
+    SHOULDER_BACK_MAX_CM = 4.0
 
     def hand_points_for(self, side, M):
         """The hand's knuckles and fingertips as M would place them (world), to test a turn against the gun."""
@@ -432,6 +437,8 @@ class FakePose:
         """Pose Lab's _put_hand with the joint limits: the elbow from best_elbow, the hand set to M, the roll into the
         forearm. Returns the reach short (cm) as _put_hand does; the readings go to self.last_limits[side]."""
         L = self.L
+        if self.SHOULDER_BACK_MAX_CM > 0.0:
+            self._clavicle_rest(side)
         E, wrist, bend, under = self.best_elbow(side, M)
         turned = 0.0
         if wrist > self.WRIST_MAX and getattr(self, "turn_per_frame", True):
@@ -443,14 +450,86 @@ class FakePose:
         up, lo = L._n("upperarm", side), L._n("lowerarm", side)
         S, E0, W0 = L._bw(up).translation, L._bw(lo).translation, L._bw(hn).translation
         short = max(0.0, (M.translation - S).length - (E0 - S).length - (W0 - E0).length) * 100.0
+        back = 0.0
+        if (wrist > self.WRIST_MAX or short > 0.0) and self.SHOULDER_BACK_MAX_CM > 0.0:
+            back, E, wrist, bend, under, short = self.shoulder_back(side, M)
+            S, E0, W0 = L._bw(up).translation, L._bw(lo).translation, L._bw(hn).translation
         L._two_bone(side, M.translation, pole_world=Vector(E.tolist()))
         L._set_world(hn, Matrix.LocRotScale(L._bw(hn).translation, M.to_quaternion(), L._unit()))
         L._roll_forearm(side)
         if not hasattr(self, "last_limits"):
             self.last_limits = {}
         self.last_limits[side] = {"wrist_bend_deg": round(wrist, 1), "elbow_bend_deg": round(bend, 1), "elbow_under_cm": round(under, 1),
-                                  "hand_turned_deg": round(turned, 1)}
+                                  "hand_turned_deg": round(turned, 1), "shoulder_back_cm": round(back, 2)}
         return short
+
+    def _clavicle_name(self, side):
+        L = self.L
+        for cn in ((L.names.get("clavicle") or "clavicle_{s}").format(s=side), "clavicle_" + side):
+            if cn in L.arm.pose.bones:
+                return cn
+        return None
+
+    def _clavicle_rest(self, side):
+        """Each frame's shoulder move starts from the template body's collarbone (saved at first use), so the moves
+        never add up frame over frame; the limit counts from the template's shoulder place."""
+        L = self.L
+        if not hasattr(self, "_clav_rest"):
+            self._clav_rest = {}
+        cn = self._clavicle_name(side)
+        if cn is None:
+            return
+        if side not in self._clav_rest:
+            self._clav_rest[side] = (L._bw(cn).copy(), L._bw(L._n("upperarm", side)).translation.copy())
+        else:
+            L._set_world(cn, self._clav_rest[side][0])
+            bpy.context.view_layer.update()
+
+    def shoulder_back(self, side, M, step_deg=1.0):
+        """The owner's move (2026-10-27): the collarbone turned so the shoulder joint moves back along the view until
+        the wrist bends inside WRIST_MAX and the arm reaches, at most SHOULDER_BACK_MAX_CM from where it started.
+        Each step turns the clavicle about the world's up axis through its head, the sign that moves the shoulder
+        back; stops when a step moves it back no more. Returns (cm moved back, elbow, wrist, bend, under, short)."""
+        L = self.L
+        cn = self._clavicle_name(side)
+        if cn is None:
+            E, wrist, bend, under = self.best_elbow(side, M)
+            return 0.0, E, wrist, bend, under, 0.0
+        VF = Vector(list(self.gk["view"][1]))
+        up, lo, hn = L._n("upperarm", side), L._n("lowerarm", side), L._n("hand", side)
+        S0 = Vector(self._clav_rest[side][1])            # the template body's shoulder: the limit counts from here
+        head = L._bw(cn).translation.copy()
+
+        def state():
+            E, wrist, bend, under = self.best_elbow(side, M)
+            S, E0, W0 = L._bw(up).translation, L._bw(lo).translation, L._bw(hn).translation
+            short = max(0.0, (M.translation - S).length - (E0 - S).length - (W0 - E0).length) * 100.0
+            return E, wrist, bend, under, short
+        E, wrist, bend, under, short = state()
+        moved = 0.0
+        for _ in range(int(60 / step_deg)):
+            if wrist <= self.WRIST_MAX and short <= 0.0:
+                break
+            if moved >= self.SHOULDER_BACK_MAX_CM:
+                break
+            M0 = L._bw(cn).copy()
+            best = None
+            for sg in (1.0, -1.0):
+                L._set_world(cn, M0)
+                L._turn_about(cn, Vector((0.0, 0.0, 1.0)), sg * step_deg, head)
+                bpy.context.view_layer.update()
+                b_ = float((S0 - L._bw(up).translation).dot(VF)) * 100.0        # cm the shoulder sits behind its start
+                if best is None or b_ > best[0]:
+                    best = (b_, L._bw(cn).copy())
+            if best is None or best[0] <= moved + 0.02:
+                L._set_world(cn, M0)
+                bpy.context.view_layer.update()
+                break
+            L._set_world(cn, best[1])
+            bpy.context.view_layer.update()
+            moved = best[0]
+            E, wrist, bend, under, short = state()
+        return moved, E, wrist, bend, under, short
 
     def rest_shift(self):
         """Where the rest hold moves the gun from the aim (the preset idle_pull), as a world vector."""

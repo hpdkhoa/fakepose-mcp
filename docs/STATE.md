@@ -47,6 +47,10 @@ My own choices, told to the owner: the rifle family keeps the first-person templ
 
 ## Queued asks
 
+- 2026-10-27, the owner: the arm check done (POSE_RULES run 18, docs/validate/arms_rig_vs_human.md): the upper arm 5 cm short of a man's; the owner decides whether the rig's upper arm is lengthened (a rig and mesh change, Pose Lab is hands-off on game models without permission).
+
+- 2026-10-27 (done, run 18): the M24 rerun; the shoulder-back move built (SHOULDER_BACK_MAX_CM 4, job option shoulder_back_max_cm); it opens the elbow, not the wrist, on the M24 grip; the M24 holds still fail the gate (grip pinky 1.32 off, wrist 35; support thumb 1.46 inside): their authoring is next if the owner says so. The ask was: rerun the M24 on the current engine (gate, limits) and report; build the shoulder-back move (the owner's idea: "move the shoulder back so the arm is extend then the wrist can be flatten") with a limit; the AR15 and M16A2 are two guns (Model Lab test gun; Blueprint Lab gun).
+
 - 2026-10-27, the owner: "when all done, I want to have a video showcase about the evolution of all my lab mcp, and the visual flow of the lab mcp collaboration". After the M16A2's four holds pass the full rule. Sources: `K:/Projects/Claude/cc/report/lab_mcp_retrospective_2026-10-25.md`, each lab's git log, the showcases in `cc/out/showcase/`.
 
 ## Open, by the gate's numbers (2026-10-26)
