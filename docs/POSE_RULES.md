@@ -396,3 +396,41 @@ against about 32.8 (5 cm, 15 % short); the forearm 27.2 against 26.7; the hand 1
 against 8.8; the upper arm girth 34.8 against about 33 relaxed; the forearm girth 26.4 against about 29 (slim). The
 owner's reading holds: the arm reaches 5 cm less than a man's, which is why the support hand slides back 14 to 17
 cm on every rifle.
+
+### Run 19 (2026-10-27): the upper arm lengthened to a man's; the AR15 regression
+
+The owner: "upper arm will need to lengthen" and "keep your 4cm limit for shoulder and start the work". Each upper
+arm bone of the Gun Kit arms copy (Saved/PoseLab/ar_slim/Arms.fbx) lengthened 27.8 to 32.8 cm (ANSUR II men, 50th:
+36.3 from the acromion minus about 3.5 to the joint) by `Tools/blender/long_arms.py` (a copy in
+`docs/validate/long_arms.py`): the elbow joint and all below it carried out along the upper arm's line, the upper
+arm's skin stretched along that line; the old file kept as `Arms.pre_long_upperarm.fbx`. The skeleton edit lives in
+`bone_edits.json` ("upperarm": 1.1811) and Pose Lab's loader applies it to the idle clip's skeleton (lab.py
+`_edit_skeleton`), the same way as the finger and palm edits. Check through the loader: both upper arms 32.8, the
+forearms 27.25 unchanged, the elbow skin's centre against the joint 1.85 to 1.98 cm (right) and 1.26 to 1.40
+(left): the skin follows the bones. Pictures: `K:/Projects/Claude/cc/report/arms/arms_upperarm_before_after.png`
+(the file at rest) and `arms_upperarm_loader_before_after.png` (the idle pose through the loader).
+
+A fresh rig measures its hands anew (the measure cache keys on the arms files); that path reached the object's
+samples before any region call and crashed the first run (fixed in poselab contactlab `_object_now`). The full run
+then ran out of the 10 minute budget at 5 clips (the fresh measure's cost), so the AR15 ran as two hand parts
+(drive_split, now merging the rule tables).
+
+AR15, 12 clips, 1,178 frames, run 17 (short arm) against run 19 (long arm):
+
+| Rule | Run 17 | Run 19 |
+|---|---|---|
+| 4 cover | 3.4 to 8.6 % | 3.4 to 8.4 % (idle 5.4 to 6.4): FAIL as before |
+| 7 pulling hand on screen | check 0.19, charge 0.30 | check 0.21, charge 0.34: FAIL as before |
+| 8 joints, every frame | r wrist 13.6, l wrist 30.0 | r wrist 25.0, l wrist 29.9 (elbows 102 to 119 r, 24 to 137 l): PASS |
+| 9 clipping seen | 0 of 1,178 | 0 of 1,178 |
+| 11 gate | 5 of 5 PASS | 5 of 5 PASS |
+| support slid back along the handguard | 17.0 cm | 11.0 cm |
+| grip wrist / elbow | 9.0 / 111.6 | 20.6 / 118.8 |
+| support wrist / elbow | 16.2 / 68.8 | 22.2 / 65.5 |
+| catch, handle, mag wrist | 10.0, 3.2, 2.6 | 0.7, 14.9, 8.0 |
+
+The owner's reading holds: with the arm at a man's length the support hand reaches 6 cm further along the
+handguard (17 to 11 cm short of the mark). The grip wrist grew 9 to 20.6 (inside the 30 wall): the longer bone puts
+the elbow further under (26 to 32 cm) and the forearm's line meets the authored hand facing at a bigger angle; the
+hold is authored for the short arm and can be re-tuned. The shoulder-back move did not fire on any AR15 hold
+(shoulder_back_cm 0). Open as before: rules 4 and 7. The shoulder limit stays 4 cm (the owner, 2026-10-27).

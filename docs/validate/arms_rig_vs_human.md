@@ -14,3 +14,7 @@ The owner: "check for me if the current arm model has the real human perimeter".
 Finger segments (bone, cm): thumb 4.4 / 3.1 / 3.1, index 3.8 / 2.4 / 2.4, middle 4.8 / 2.3 / 2.3, ring 4.7 / 2.1 / 2.1, pinky 3.7 / 1.9 / 1.9. A real index runs about 4.5 / 2.5 / 2.0 (proximal, middle, distal phalanx, Buryanov 2010): the rig's end joints are equal to its middle ones, so the fingertips sit about 0.4 cm long and the knuckle segment 0.7 cm short.
 
 What it means: the upper arm is about 5 cm (15 %) short of a man's; the hand length, the breadth, the forearm and the upper arm girth are at human size (a first read of 15.9 cm for the right hand was my measure's fault: the bone's tail, not its matrix times its length); the forearm is 2.6 cm slim. A gun built to its true length meets an arm that reaches 5 cm less than a real one (the upper arm): the support hand slides back 14 to 17 cm along the handguard (slid_back_cm in every run) and the wrist bends to reach the grip. The owner's reading is right.
+
+## 2026-10-27: the upper arm lengthened
+
+The owner: "upper arm will need to lengthen". Each upper arm bone 27.8 to 32.8 cm (`long_arms.py`, the factor 1.1811 in `bone_edits.json`); the forearm, hand and girths untouched. Through Pose Lab's loader: upper arm 32.8 both sides, forearm 27.25, the elbow skin's centre against the joint 1.85 to 1.98 cm (right), 1.26 to 1.40 (left). AR15 run 19: the support hand slides back 11 cm instead of 17 along the handguard; all five holds pass the gate; 0 clipping frames. The forearm's 2.6 cm slimness stays as it is (not asked).
