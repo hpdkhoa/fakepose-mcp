@@ -466,3 +466,12 @@ is not a grip. Engine changes in this run (mine, told): a gun's tuning may set a
 (palm_into, fingers_toward, offset_cm, standoff_cm, contact); the gate's palm-in seats the hand on its first finger
 contact instead of chasing a finger that cannot reach (the pinky under the short wrist drove the palm 2 cm into the
 stock). Open for the owner: the M24 grip against the wrist wall.
+
+Regression of the palm-seating change, AR15 (two parts, 12 clips, 1,178 frames): the same numbers as run 19 to the
+decimal (rule 11 five of five, 0 clipping, grip wrist 20.6, support slid back 11.0, rules 4 and 7 open): the AR15's
+holds never used the palm-in. The M16A2 regression follows.
+
+M16A2 on the long arm with the palm-seating change (two parts, 12 clips, 1,178 frames): rule 11 five of five PASS,
+0 clipping, and rule 8 now PASS (the left elbow's least bend 11.4 degrees; run 17's lock at 2.2 is gone with the
+longer upper arm); rule 6 port 53 % as before; rules 4 (4 to 11 %) and 7 (0.21 / 0.32) open as before. Holds: grip
+wrist 19.4, support 19.9 (slid back 9.0), catch 2.0, handle 3.4, cup 8.2.
