@@ -78,7 +78,8 @@ class FakePose:
                 out.setdefault("captured", {})[key_] = dict(d_, _own=own_)
         # the gun's own tuning of its holds (the owner, 2026-10-26: per-gun authored holds, tuned by the gate's numbers):
         # presets/guns/<gun>.json {"holds": {"side:mark": {"shift_cm": {forward, up, left}, "standoff_cm", "offset_cm",
-        # "fingers": {...}, "curl": "wrap"|"together"}}}; applied over the family's preset or the captured hold
+        # "palm_into", "fingers_toward", "contact", "fingers": {...}, "curl": "wrap"|"together"}}}; applied over the
+        # family's preset or the captured hold
         gp = os.path.join(DATA, "presets", "guns", "%s.json" % self.facts["name"])
         out["gun_tuning"] = json.load(open(gp, encoding="utf-8")).get("holds", {}) if os.path.exists(gp) else {}
         out["file"] = p
@@ -752,9 +753,11 @@ class FakePose:
                 n_ = Vector(self.palm_normal_for(side, H0).tolist())
                 mv_ = 0.0
                 for _ in range(8):
-                    # in by a quarter cm while any used finger still misses and nothing of the hand is inside
+                    # in by a quarter cm while every used finger still misses and nothing of the hand is inside: the
+                    # hand seats on its first contact (2026-10-27: chasing a finger that cannot reach, the M24's
+                    # pinky under the stock's short wrist, drove the palm 2 cm into the stock)
                     g_now = {d: self.digit_tip_gap(side, d) for d in used if d != "thumb"}
-                    if all(v <= self.glove + self.GATE_TOUCH_CM for v in g_now.values()) or self.hand_in_gun(side)["digits"]:
+                    if any(v <= self.glove + self.GATE_TOUCH_CM for v in g_now.values()) or self.hand_in_gun(side)["digits"]:
                         break
                     H0 = Matrix.Translation(n_ * 0.0025) @ H0
                     L._put_hand(side, Matrix.LocRotScale(H0.translation, H0.to_quaternion(), L._unit()))
@@ -1005,6 +1008,10 @@ class FakePose:
         key, p = self.preset(side, mark, kind)
         if p is None:
             raise KeyError("fakepose: no preset for %s %s %s" % (side, mark, kind))
+        # the gun's own tuning may set the hand's facing and seat on this gun (a stock's sloped wrist against a
+        # vertical pistol grip, 2026-10-27): these keys read over the family's preset
+        tune_ = self.tuning(side, mark)
+        p = dict(p, **{k: tune_[k] for k in ("palm_into", "fingers_toward", "offset_cm", "standoff_cm", "contact") if k in tune_})
         if p.get("mirror_of"):
             return self.mirrored(side, p), None, key + ": " + p.get("source", "")
         F, U, Lf = self.gun_axes()

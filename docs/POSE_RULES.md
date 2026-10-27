@@ -434,3 +434,35 @@ handguard (17 to 11 cm short of the mark). The grip wrist grew 9 to 20.6 (inside
 the elbow further under (26 to 32 cm) and the forearm's line meets the authored hand facing at a bigger angle; the
 hold is authored for the short arm and can be re-tuned. The shoulder-back move did not fire on any AR15 hold
 (shoulder_back_cm 0). Open as before: rules 4 and 7. The shoulder limit stays 4 cm (the owner, 2026-10-27).
+
+### Run 20 (2026-10-27): the M24 on the long arm; its support authored; its grip meets the wrist wall
+
+The M24 on the long arm (two parts, 10 clips, 864 frames): 0 clipping seen; the preset holds fail the gate as
+before (grip pinky 1.32 off, wrist 48.1 in the fire clip with the shoulder back 4.2; support thumb 1.41 inside);
+rule 8 breaks in the clips (right wrist 32.5, left wrist 59.0, elbows at 2.1 degrees: the bolt-work clips with the
+unauthored holds); rule 6 port 0 % (roll 5 and 30, not 60).
+
+The support authored: the forend is 5.4 cm wide with a flat bottom 4.1 cm under the bore (measured); the preset's
+thumb folded under the flat bottom 1 cm right of centre. The hand 3.0 cm left (presets/guns/M24SWS.json): PASS,
+thumb -0.15 index 0.08 middle 0.20 ring 0.11 pinky 0.09, wrist 10.7, elbow 63.9, slid back 9.0 cm (the long arm:
+11 cm as the preset sat). Picture: `K:/Projects/Claude/cc/report/tune/M24_support_before_after.png`.
+
+The grip (picture `M24_grip_scan.png`, the fire clip):
+
+| Placement | Wrist | Elbow | Digits | Gate |
+|---|---|---|---|---|
+| A preset as is, shoulder back 4.2 | 48.1 | 120 | pinky 1.32 off | FAIL |
+| B fingers square across the wrist line (the stock's wrist runs ~35 deg from vertical, measured) | 64.6 | 121 | ring 1.32, pinky 0.76 off | FAIL |
+| C as A, shoulder allowed 16 (went 14.8) | 36.3 | 96.5 | pinky 1.32 off | FAIL |
+| D hand 1.0 up, palm seated on first contact, hand turned 2.5 | 28.4 | 128 | four touch, pinky 2.12 off; the fingers lie along the stock's side | FAIL |
+
+Why: the shoulder-to-hand distance at the M24 grip is 30 cm (the AR15's 30.9), so the elbow sits 25.6 cm off the
+shoulder-hand line and the forearm comes in 70 degrees off that line whatever the elbow's swing; the AR15's grip
+hangs 14.3 cm under the eye (its hand points 34 degrees off the line, wrist 20.6), the M24's only 7.8 (18 degrees
+off, wrist 48). A forearm within 30 of a hand that wraps the wrist needs the shoulder-to-hand distance near 45 cm
+(d 30: 70 deg off; 35: 62; 40: 54; 45: 46; 50: 37), 15 cm more than the body has; the collarbone gave 14.8 cm and
+the wrist still 36. The hand turned on its palm reaches 28 only with the fingers along the stock's side (D), which
+is not a grip. Engine changes in this run (mine, told): a gun's tuning may set a hold's facing and seat
+(palm_into, fingers_toward, offset_cm, standoff_cm, contact); the gate's palm-in seats the hand on its first finger
+contact instead of chasing a finger that cannot reach (the pinky under the short wrist drove the palm 2 cm into the
+stock). Open for the owner: the M24 grip against the wrist wall.
