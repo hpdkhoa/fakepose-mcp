@@ -11,7 +11,7 @@ curl = sys.argv[7] if len(sys.argv) > 7 else "together"
 VIEWS = (os.environ.get("TUNE_VIEWS") or "right").split(",")
 ov = Path("K:/Projects/gitHub/fakepose-mcp/src/fakepose_mcp/data/presets/guns") / (gun + ".json")
 d = json.loads(ov.read_text(encoding="utf-8"))
-d["holds"][key] = {"shift_cm": {"forward": fwd, "up": up, "left": left}, "curl": curl}
+d["holds"].setdefault(key, {}).update({"shift_cm": {"forward": fwd, "up": up, "left": left}, "curl": curl})   # the hold's other keys (facing) stay
 ov.write_text(json.dumps(d, indent=1), encoding="utf-8")
 G = Path("K:/epic/ToangTown/ToangTown/Saved/Gate/gunkit") / gun
 opts = dict({"out": str(G / "hands_tune"), "anim_clips": {clip: VIEWS}, "anim_size": [960, 540]}, **json.loads(os.environ.get("HANDS_OPTIONS") or "{}"))
