@@ -25,7 +25,8 @@
    },
    "point_a": {
     "behind_ring_cm": 6.2,
-    "source": "the owner's mark on the left view, 2026-10-28: the top of the wrist right behind the action"
+    "source": "the owner's mark on the left view, 2026-10-28: the top of the wrist right behind the action",
+    "right_of_centre_cm": 1.0
    },
    "thumb_root": "left_face"
   },

@@ -878,8 +878,9 @@ class FakePose:
         # between the tang and the comb), the web's seat
         topp, best = [], None
         U_ = Vector(list(U))
+        a_right = float((self.tuning(side, "grip").get("point_a") or {}).get("right_of_centre_cm", 0.0))   # the owner, 2026-10-28: A a little right of the centre line
         for yc in np.arange(-1.5, -20.0 - 1e-9, -0.2):
-            o = Vector(list(ring + F * (yc / 100.0) + U * 0.25))
+            o = Vector(list(ring + F * (yc / 100.0) + U * 0.25 - _Lf * (a_right / 100.0)))
             h = bvh.ray_cast(o, -U_, 0.5)
             if h[0] is None:
                 continue
@@ -1133,9 +1134,42 @@ class FakePose:
             if q.axis.length > 1e-6:
                 L._turn_about(tn, q.axis.normalized(), math.degrees(q.angle), base)
             bpy.context.view_layer.update()
+            # the owner, 2026-10-28: "move the palm outside": the hand slid toward the gun's right, 0.25 cm a step, until
+            # the palm's skin is outside the stock (at most 6 cm); the fingers and the thumb keep their shape
+            _b, _T, sidev, kind, segi = L._skin_static()
+            psel = np.nonzero((sidev == (1 if side == "r" else 2)) & (kind == 2))[0][::2]
+            out_cm = 0.0
+            while out_cm < 6.0:
+                dp = float(np.min(self.gun_signed(L._skin_arrays()[0][psel])))
+                if dp >= 0.0:
+                    break
+                H2 = Matrix.Translation(Vector(list(-Lf * 0.0025))) @ H2
+                PH(side, H2)
+                bpy.context.view_layer.update()
+                out_cm += 0.25
+            self._palm_out = {"slid_right_cm": round(out_cm, 2), "palm_least_depth_cm": round(dp, 2)}
+            # after the slide: the index aimed at the ring's middle again, the straight thumb laid along the left
+            # face again (the slide moved both off their marks)
+            best = None
+            for a_ in np.arange(-15.0, 90.0 + 1e-9, 2.5):
+                self._pose_abs(side, "index", [float(a_), 0.0, 0.0])
+                bpy.context.view_layer.update()
+                Li = L.index_pad_line(side)
+                c_ = float(unit(np.array(Li["dir"])) @ unit(lb["mid"] - np.array(Li["pads"][min(Li["pads"])])))
+                if best is None or c_ > best[0]:
+                    best = (c_, float(a_))
+            self._pose_abs(side, "index", [best[1], 0.0, 0.0])
+            self._pose_abs(side, "thumb", [0.0, 0.0, 0.0])
+            bpy.context.view_layer.update()
+            base = L._bw(tn).translation.copy()
+            tip = Vector(list(L._anchor(side, "thumb_tip")))
+            q = (tip - base).normalized().rotation_difference(Vector(list(dt)))
+            if q.axis.length > 1e-6:
+                L._turn_about(tn, q.axis.normalized(), math.degrees(q.angle), base)
+            bpy.context.view_layer.update()
             tip2 = np.array(list(L._anchor(side, "thumb_tip")))
             rd = self.index_b_reading(side)
-            return H2, {"hand_moved_for_thumb_root_cm": round(float(np.linalg.norm(mv)) * 100.0, 2), "thumb_root_target_world": [round(float(x), 4) for x in T_l],
+            return H2, {"hand_moved_for_thumb_root_cm": round(float(np.linalg.norm(mv)) * 100.0, 2), "palm_out": self._palm_out, "thumb_root_target_world": [round(float(x), 4) for x in T_l],
                         "thumb_root_gap_cm": round(float(self._gaps(side, "thumb", None)[0]), 2), "thumb_turned_deg": round(math.degrees(q.angle), 1),
                         "thumb_tip_left_of_middle_cm": round(float((tip2 - self.to_world((0.0, 0.0, 0.0))) @ Lf) * 100.0, 2),
                         "index_knuckle_deg": best[1], "reading": rd, "web": self.web_a_reading(side)}
