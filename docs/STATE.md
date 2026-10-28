@@ -103,3 +103,51 @@ Result: line B PASS its definition; the index on it (0.3 deg); joints PASS; the 
 thumb base 2.8, thumb tip 1.47 inside; stock wrist 1.8 cm proud of the guard's face): gate FAIL. Waiting for the owner's
 choice (OWNER_FEEDBACK.md, 2026-10-28). Note: arm_touch.png renders black (no lights yet at that point): the picture
 script uses the hold's render with the touch json's points; fix when the owner continues this line.
+
+## HANDOFF 2026-10-29 (for the next model/session): the M24 grip work, where it stands
+
+Read first: the global CLAUDE.md rules (walls, markers, least verbose), poselab-mcp/docs/OWNER_FEEDBACK.md from
+"2026-10-28, the owner: I see that index finger is not on the B line" to the end (every ask and result), this file.
+
+**The hold now (run plan16), M24SWS r:grip, overlay `src/fakepose_mcp/data/presets/guns/M24SWS.json`:**
+place `web_a_thumb_arrow`, point_a {behind_ring_cm 6.2, right_of_centre_cm 1.0}, thumb_arrow {forward 2, up -1},
+thumb_over_down 0.7, fingers.thumb curl_to_contact, shift 0. Pipeline (fakepose.py `place_web_a_thumb_arrow`): web
+fold on A (the wrist's top behind the action, measured by down rays) → the hand slid right by the wrist's half width
+(1.07 cm) so the palm sits on the right face → turned about the palm's normal so the index aims at line B's middle →
+index knuckle set (17.5 deg) → thumb laid across the top toward the left and down, pad rolled onto the top, joints
+bent until the tip meets the left face → the other fingers curl to contact. Line B measured by `measure_line_b`
+(side rays round the trigger mark, the trigger's polygons left out). Gate items added: index vs B (mode "fingers":
+angle only), web vs A (0.5 cm). Hand turn on the palm off (hand_turn_max_deg 0). Elbow wall ELBOW_OUT_CM 3 (on its
+own side of the gun).
+
+**Body and gun (Gun Kit options, gunkit_hands.py):** `body: anatomical` (both shoulders 19 cm under the eye),
+`butt_lock_cm: 5` (body_blade: the torso turned 70 deg cap, the butt still 8 cm behind the joint), `gun_to_shoulder:
+true` (the gun pushed 13 cm forward: butt 5 cm ahead of the joint, eye relief 19.3 cm instead of 6.35), `arm_view:
+true`, `arm_view_extra: [{name, side left|right, centre_mark, fov_deg}]` (arm_<name>.png + json).
+
+**Run command (from K:/epic/ToangTown/ToangTown; one Blender job at a time, ~2 min):**
+TUNE_VIEWS=right TUNE_TAG=_x HANDS_OPTIONS='{"arm_view": true, "hand_turn_max_deg": 0, "body": "anatomical",
+"butt_lock_cm": 5.0, "gun_to_shoulder": true, "arm_view_extra": [{"name": "arm_left", "side": "left"}, {"name":
+"grip_left", "side": "left", "centre_mark": "grip", "fov_deg": 30}]}' python <scratchpad>/tune_hold.py M24SWS r:grip
+fire 0.0 0.0 0.0   (tune_hold.py: fakepose-mcp/docs/validate/ has copies of the durable scratch tools; tune_hold.py
+and lineb_pic.py live in the session scratchpad: copy them to docs/validate/ when starting fresh.)
+Output: Saved/Gate/gunkit/M24SWS/hands_tune/ (hands.json, arm_hold/pulled/touch/arm_left/grip_*.png + .json).
+Pictures go to K:/Projects/Claude/cc/report/tune/M24_<run>_*.png with markers (lineb_pic.py and the small PIL
+labelers in the transcript).
+
+**Numbers now (plan16):** five digits touch (thumb -0.36 left face, index -0.25, middle 0.11, ring 0.10, pinky 0.10);
+web 1.13 from A (the planned slide); elbow 121.5 aim / 112.4 pulled PASS, 2.2 cm under the shoulder; wrist 94.0 aim /
+74.2 pulled FAIL (wall 30); index 49 deg off line B's direction (the slant to the trigger).
+
+**Straight-wrist geometry (asked 2026-10-29):** with the hand as it sits, the forearm on the hand's line needs the
+elbow 28 cm ABOVE the shoulder (aim) / 24 (pulled), 29 cm from it (upper arm 32.8): the raised firing elbow, which
+breaks the elbow-under-shoulder wall. With the elbow as it is, a straight wrist needs the hand along the forearm,
+off the grip. Pictures report/tune/M24_plan16_straight_wrist_aim.png, _pulled.png.
+
+**Open decisions (the owner's):** (1) the wrist: the elbow-under wall vs the raised elbow vs the hand's angle on the
+grip; (2) the index slant rule for this stock; (3) the eye relief 19.3 after the gun push (the scope); (4) the web-vs-A
+gate check measures from A's middle-line point (1.13 "fail" is the planned slide: adjust the check to A's height
+and place along the bore); (5) the gate's thumb "opened_first" and a later step bending the index a few degrees.
+**Rules learned this thread:** never move the hand to fix a finger (A is a wall); the palm faces the grip, no roll
+search; the thumb reaches the left by its own joints; A moved only where the owner marks it; verify + report with
+numbers before building; least verbose; markers on every picture; left and right close views on every round.
