@@ -833,6 +833,166 @@ class FakePose:
         self.report.setdefault("line_b", {})[side] = out
         return out
 
+    WEB_A_CM = 0.5               # the web fold within this of point A (mine, 2026-10-28, told)
+
+    def measure_point_a(self, side="r"):
+        """Point A on the back of the grip (the owner, 2026-10-28: "the web need to goes in the back of the grip"): rays
+        along the bore on the gun's middle line, from far behind, at heights from 4 cm above the ring's top to 10 cm
+        under its centre; on each the surfaces that face backward (the grip's back) between 15 and 1.5 cm behind the
+        ring's middle; A = the most forward of them, the deepest point of the grip's back curve where the web sits
+        (my reading of "the back of the grip", a point). Kept in the gun's frame; the profile reported."""
+        if not getattr(self, "line_b", {}).get(side):
+            self.measure_line_b(side)
+        F, U, _Lf = self.gun_axes()
+        lb = self.line_b_world(side)
+        ring = lb["ring"]
+        rh = float((self.report.get("line_b", {}).get(side) or {}).get("ring_height_cm") or 1.8)
+        bvh = self.gun_bvh()
+        prof, best = [], None
+        for zc in np.arange(rh / 2.0 + 4.0, -10.0 - 1e-9, -0.2):
+            o = Vector(list(ring - F * 0.45 + U * (zc / 100.0)))
+            d = Vector(list(F))
+            got = None
+            for _ in range(48):
+                h = bvh.ray_cast(o, d, 0.6)
+                if h[0] is None:
+                    break
+                dd = float((np.array(list(h[0])) - ring) @ F) * 100.0
+                if dd > -1.5:
+                    break
+                if dd > -15.0 and h[1].dot(d) < 0.0:
+                    got = (dd, np.array(list(h[0])), np.array(list(h[1].normalized())))
+                o = h[0] + d * 1e-5
+            if got is not None:
+                prof.append([round(zc, 1), round(got[0], 2)])
+                if best is None or got[0] > best[0]:
+                    best = (got[0], got[1], got[2], zc)
+        if best is None:
+            raise ValueError("fakepose: no back face of the grip found behind the ring")
+        back_face = {"A_gun_cm": [round(x * 100.0, 2) for x in (self.gk["bone_world"]("Root").inverted() @ Vector(list(best[1])))],
+                     "behind_ring_cm": round(best[0], 2), "above_ring_centre_cm": round(best[3], 2), "profile_z_cm_depth_cm": prof[::3],
+                     "note": "the backward-facing surface nearest the ring: on the M24 this is the trigger guard's rear bow, not the grip (run weba, 2026-10-28)"}
+        # the wrist's top behind the tang (the owner, 2026-10-28: the web "in the back of the grip" with the thumb crossing to
+        # the left side: the hand wraps the wrist from the right, the web over its top): rays straight down on the middle
+        # line from 1.5 to 20 cm behind the ring; the top profile; A = its lowest point behind the receiver (the saddle
+        # between the tang and the comb), the web's seat
+        topp, best = [], None
+        U_ = Vector(list(U))
+        for yc in np.arange(-1.5, -20.0 - 1e-9, -0.2):
+            o = Vector(list(ring + F * (yc / 100.0) + U * 0.25))
+            h = bvh.ray_cast(o, -U_, 0.5)
+            if h[0] is None:
+                continue
+            zc = float((np.array(list(h[0])) - ring) @ U) * 100.0
+            topp.append([round(yc, 1), round(zc, 2)])
+            if best is None or zc < best[0]:
+                best = (zc, np.array(list(h[0])), np.array(list(h[1].normalized())), yc)
+        if best is None:
+            raise ValueError("fakepose: no top of the wrist found behind the ring")
+        prof = topp
+        Rw = self.gk["bone_world"]("Root")
+        Ri = Rw.inverted()
+        A, nA = best[1], best[2]
+        if float(nA @ U) < 0.0:
+            nA = -nA
+        if not hasattr(self, "point_a"):
+            self.point_a = {}
+        self.point_a[side] = {"A": list(Ri @ Vector(list(A))), "normal": list((Ri.to_3x3() @ Vector(list(nA))).normalized())}
+        out = {"side": side, "A_gun_cm": [round(x * 100.0, 2) for x in self.point_a[side]["A"]],
+               "A_behind_ring_cm": round(best[3], 2), "A_above_ring_centre_cm": round(best[0], 2),
+               "how": "rays straight down on the middle line 1.5 to 20 cm behind the ring; the wrist's top profile; A = its lowest point (the saddle between the tang and the comb)",
+               "definition": "the web fold in the back of the grip (the owner, 2026-10-28), read as the seat on top of the wrist behind the tang, where the web rests when the thumb crosses to the left (a point; my reading, told)",
+               "top_profile_y_cm_z_cm": prof[::3], "back_face_reading_rejected": back_face,
+               "check": {"on_middle_line": True, "faces_up": bool(float(nA @ U) > 0.0), "ok": bool(float(nA @ U) > 0.0 and -20.0 < best[3] < -1.5)}}
+        self.report.setdefault("point_a", {})[side] = out
+        return out
+
+    def point_a_world(self, side):
+        pa = self.point_a[side]
+        Rw = self.gk["bone_world"]("Root")
+        return np.array(list(Rw @ Vector(pa["A"]))), unit(np.array(list(Rw.to_3x3() @ Vector(pa["normal"]))))
+
+    def web_a_reading(self, side):
+        A, nA = self.point_a_world(side)
+        W = np.array(list(self.L._anchor(side, "web_fold")))
+        F, U, _Lf = self.gun_axes()
+        return {"web_to_A_cm": round(float(np.linalg.norm(W - A)) * 100.0, 2),
+                "web_from_A_along_bore_up_out_cm": [round(float((W - A) @ F) * 100.0, 2), round(float((W - A) @ U) * 100.0, 2), round(float((W - A) @ nA) * 100.0, 2)]}
+
+    def place_web_a_index_b(self, side, H, into):
+        """The pistol grip's rule on this gun (the owner, 2026-10-28): the web fold on point A (the back of the grip),
+        the straight index turned parallel to the bore (tip forward) about A, then the hand rolled about the bore's
+        line through A to bring the index pads as near line B as the hand allows, outside and not pressing (the owner,
+        2026-10-22: "just keep it close"). The thumb's rule then closes it on the far (left) side."""
+        L = self.L
+        PH = getattr(L, "_put_hand_unlimited", None) or L._put_hand
+        L.natural_open(side, index_extended=True)
+        bpy.context.view_layer.update()
+        PH(side, H)
+        bpy.context.view_layer.update()
+        F, U, _Lf = self.gun_axes()
+        A, nA = self.point_a_world(side)
+        At = A + nA * (self.glove / 100.0)
+        lb = self.line_b_world(side)
+        dB, nF, mid = lb["dir"], lb["normal"], lb["mid"]
+        W = np.array(list(L._anchor(side, "web_fold")))
+        H1 = Matrix.Translation(Vector(list(At - W))) @ Matrix(H)
+        PH(side, H1)
+        bpy.context.view_layer.update()
+        Li = L.index_pad_line(side)
+        d = unit(np.array(Li["dir"]))
+        q = Vector(list(d)).rotation_difference(Vector(list(F)))
+        pv = Vector(list(At))
+        H2 = Matrix.Translation(pv) @ q.to_matrix().to_4x4() @ Matrix.Translation(-pv) @ H1
+        PH(side, H2)
+        bpy.context.view_layer.update()
+        _b, _T, sidev, kind, segi = L._skin_static()
+        sc = 1 if side == "r" else 2
+        sel = np.nonzero((sidev == sc) & ((kind == 2) | ((kind == 3) & (segi >= 3) & (segi <= 5))))[0][::3]
+
+        def at(theta):
+            return Matrix.Translation(pv) @ Matrix.Rotation(math.radians(theta), 4, Vector(list(F))) @ Matrix.Translation(-pv) @ H2
+
+        def state(theta):
+            PH(side, at(theta))
+            bpy.context.view_layer.update()
+            P = L._skin_arrays()[0]
+            dp = float(np.min(self.gun_signed(P[sel])))
+            Li_ = L.index_pad_line(side)
+            c_ = np.array(Li_["centre"]) - mid
+            c_ = c_ - F * float(c_ @ F)
+            dist = float(np.linalg.norm(c_)) * 100.0
+            outp = min(float((Li_["pads"][k] - mid) @ nF) * 100.0 for k in Li_["pads"])
+            return dp, dist, outp
+        # the palm's facing as the preset says gives the starting roll; the scan covers 90 degrees either way
+        f = unit(np.array(list(L._palm_facing(side))))
+        into = unit(np.asarray(into, dtype=float))
+        fp, ip = f - F * float(f @ F), into - F * float(into @ F)
+        th0 = math.degrees(math.atan2(float(np.cross(fp, ip) @ F), float(fp @ ip)))
+        tried, ok_, best = [], [], None
+        for k in range(-36, 37):
+            th = th0 + k * 2.5
+            dp, dist, outp = state(th)
+            tried.append([round(th, 1), round(dp, 2), round(dist, 2), round(outp, 2)])
+            if best is None or dp > best[1]:
+                best = (th, dp, dist, outp)
+            if dp >= 0.0 and outp >= -self.LINE_B_INSIDE_CM:
+                ok_.append((dist, th, dp, outp))
+        note = None
+        if ok_:
+            dist, th, dp, outp = min(ok_)
+            chosen = (th, dp, dist, outp)
+        else:
+            chosen, note = best, "no roll within 90 degrees puts the palm and the index outside: the least inside kept"
+        H3 = at(chosen[0])
+        PH(side, H3)
+        bpy.context.view_layer.update()
+        return H3, {"web_moved_to_A_cm": round(float(np.linalg.norm(At - W)) * 100.0, 2), "index_turned_to_bore_deg": round(math.degrees(q.angle), 2),
+                    "roll_to_palm_facing_deg": round(th0, 1), "roll_chosen_deg": round(chosen[0], 1), "least_depth_cm": round(chosen[1], 2),
+                    "index_middle_to_line_B_cm": round(chosen[2], 2), "pads_out_past_face_cm": round(chosen[3], 2),
+                    "roll_tried_deg_depth_dist_out": tried[::4], "note": note,
+                    "reading": self.index_b_reading(side), "web": self.web_a_reading(side)}
+
     def line_b_world(self, side):
         lb = self.line_b[side]
         Rw = self.gk["bone_world"]("Root")
@@ -858,16 +1018,22 @@ class FakePose:
         along = round(float((np.array(Li["centre"]) - lb["mid"]) @ dB) * 100.0, 2)
         tipfwd = bool(float(d @ dB) > 0.0)
         fails = []
+        mode = (getattr(self, "_b_mode", {}) or {}).get(side, "index_on_line_b")
         if ang > self.LINE_B_ANGLE_DEG or not tipfwd:
             fails.append("index line %.1f deg off line B%s" % (ang, "" if tipfwd else ", tip backward"))
-        if max(abs(v) for v in off.values()) > self.LINE_B_OFF_CM:
+        if mode == "index_on_line_b" and max(abs(v) for v in off.values()) > self.LINE_B_OFF_CM:
             fails.append("index pad %.2f cm off line B across the face" % max(off.values(), key=abs))
         if min(out.values()) < -self.LINE_B_INSIDE_CM:
             fails.append("index pad %.2f cm inside the face" % -min(out.values()))
-        if abs(along) > self.LINE_B_ALONG_CM:
+        if mode == "index_on_line_b" and abs(along) > self.LINE_B_ALONG_CM:
             fails.append("index middle %.2f cm from the ring's middle along the bore" % along)
-        return {"angle_to_B_deg": round(ang, 2), "tip_forward": tipfwd, "pads_across_face_cm": off, "pads_out_past_face_cm": out,
-                "middle_along_bore_cm": along, "fails": fails, "pass": not fails,
+        web = None
+        if mode == "web_a_index_b" and getattr(self, "point_a", {}).get(side):
+            web = self.web_a_reading(side)
+            if web["web_to_A_cm"] > self.WEB_A_CM:
+                fails.append("web fold %.2f cm off point A" % web["web_to_A_cm"])
+        return {"mode": mode, "angle_to_B_deg": round(ang, 2), "tip_forward": tipfwd, "pads_across_face_cm": off, "pads_out_past_face_cm": out,
+                "middle_along_bore_cm": along, "web": web, "fails": fails, "pass": not fails,
                 "pads_world": {str(k): [round(float(x), 4) for x in Li["pads"][k]] for k in ks}}
 
     def place_index_on_b(self, side, H, into):
@@ -1948,9 +2114,12 @@ class FakePose:
             dv = (F * float(sh.get("forward", 0.0)) + U * float(sh.get("up", 0.0)) + Lf * float(sh.get("left", 0.0))) / 100.0
             H = Matrix.Translation(Vector(dv.tolist())) @ H
             src += "; tuned for %s: shifted %s cm" % (self.facts["name"], sh)
-        on_b = (tune.get("place") == "index_on_line_b")
+        on_b = tune.get("place") in ("index_on_line_b", "web_a_index_b")
         placed_b = None
         if on_b:
+            if not hasattr(self, "_b_mode"):
+                self._b_mode = {}
+            self._b_mode[side] = tune.get("place")
             # the owner, 2026-10-28: "thumb grab stay on, index finger stay on middle of trigger ring": the hand placed
             # by line B (measured first, measure_line_b); the slide, the turn on the palm and the push-out below would
             # move the index off B, so they are not run for this hold, and the hand is never turned on its palm again
@@ -1962,8 +2131,14 @@ class FakePose:
             self.TURN_MAX = 0.0
             _key0, _p0 = self.preset(side, mark, kind)
             _into = self.hand_axes(dict(_p0 or {}, **{k: tune[k] for k in ("palm_into", "fingers_toward") if k in tune}))[0]
-            H, placed_b = self.place_index_on_b(side, H, _into)
-            src += "; placed by line B (the index's pad line on it, its middle at the ring's middle)"
+            if tune.get("place") == "web_a_index_b":
+                if not getattr(self, "point_a", {}).get(side):
+                    self.measure_point_a(side)
+                H, placed_b = self.place_web_a_index_b(side, H, _into)
+                src += "; placed by point A and line B (the web fold on the back of the grip, the straight index parallel to the bore near line B)"
+            else:
+                H, placed_b = self.place_index_on_b(side, H, _into)
+                src += "; placed by line B (the index's pad line on it, its middle at the ring's middle)"
         cap_ = self.presets.get("captured", {}).get("%s:%s" % (side, mark))
         if fingers and cap_ is not None and cap_.get("fingers_fit") is False:
             # the capture came from another gun: its hand placement is kept, its finger turns are not (they fit that
@@ -2043,6 +2218,9 @@ class FakePose:
         # closes to contact from outside: a finger through the gun is not a hold, from any side (the owner, 2026-10-26)
         in_gun0 = self.hand_in_gun(side)
         for dg in in_gun0["digits"]:
+            if on_b and dg == "index":
+                curls["index_inside_kept_on_B_cm"] = in_gun0["deepest_cm"]      # B is a wall: not curled away, the gate reports it
+                continue
             curls[dg + "_opened_first_deg"] = self.open_to_clear(side, dg, max_deg=90.0)
         for digit in DIGITS:
             r = rules.get(digit)
