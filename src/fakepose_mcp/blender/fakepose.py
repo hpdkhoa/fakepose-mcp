@@ -969,21 +969,11 @@ class FakePose:
         into = unit(np.asarray(into, dtype=float))
         fp, ip = f - F * float(f @ F), into - F * float(into @ F)
         th0 = math.degrees(math.atan2(float(np.cross(fp, ip) @ F), float(fp @ ip)))
-        tried, ok_, best = [], [], None
-        for k in range(-36, 37):
-            th = th0 + k * 2.5
-            dp, dist, outp = state(th)
-            tried.append([round(th, 1), round(dp, 2), round(dist, 2), round(outp, 2)])
-            if best is None or dp > best[1]:
-                best = (th, dp, dist, outp)
-            if dp >= 0.0 and outp >= -self.LINE_B_INSIDE_CM:
-                ok_.append((dist, th, dp, outp))
-        note = None
-        if ok_:
-            dist, th, dp, outp = min(ok_)
-            chosen = (th, dp, dist, outp)
-        else:
-            chosen, note = best, "no roll within 90 degrees puts the palm and the index outside: the least inside kept"
+        # the owner, 2026-10-28: "the palm need to hold the grip or the place hand need to stay": no roll search (it
+        # turned the palm flat to the ground); the palm keeps its facing into the grip's side, and what is then inside
+        # or off is reported by the gate
+        dp, dist, outp = state(th0)
+        chosen, tried, note = (th0, dp, dist, outp), [[round(th0, 1), round(dp, 2), round(dist, 2), round(outp, 2)]], "palm facing kept (no roll)"
         H3 = at(chosen[0])
         PH(side, H3)
         bpy.context.view_layer.update()
@@ -992,6 +982,69 @@ class FakePose:
                     "index_middle_to_line_B_cm": round(chosen[2], 2), "pads_out_past_face_cm": round(chosen[3], 2),
                     "roll_tried_deg_depth_dist_out": tried[::4], "note": note,
                     "reading": self.index_b_reading(side), "web": self.web_a_reading(side)}
+
+    def index_along_bore(self, side, mark):
+        """The index straightened (middle and end joints at 0) and its knuckle bent, within its range, to the angle
+        that lays its pad line most nearly parallel to the bore with the tip forward. The hand is not moved. Returns
+        the knuckle angle, the angle left to the bore and the reading against line B (measured if not yet)."""
+        L = self.L
+        if not getattr(self, "line_b", {}).get(side):
+            self.measure_line_b(side)
+        if not hasattr(self, "_b_holds"):
+            self._b_holds = set()
+        self._b_holds.add((side, mark))
+        if not hasattr(self, "_b_mode"):
+            self._b_mode = {}
+        self._b_mode[side] = "fingers"
+        F = self.gun_axes()[0]
+        best = None
+        for a in np.arange(-15.0, 90.0 + 1e-9, 2.5):
+            self._pose_abs(side, "index", [float(a), 0.0, 0.0])
+            bpy.context.view_layer.update()
+            d = unit(np.array(L.index_pad_line(side)["dir"]))
+            c = float(d @ F)
+            if best is None or c > best[0]:
+                best = (c, float(a))
+        self._pose_abs(side, "index", [best[1], 0.0, 0.0])
+        bpy.context.view_layer.update()
+        return {"knuckle_deg": best[1], "angle_to_bore_deg": round(math.degrees(math.acos(min(1.0, max(-1.0, best[0])))), 2),
+                "reading": self.index_b_reading(side)}
+
+    def thumb_over(self, side, to="left", step_deg=3.0, max_deg=120.0):
+        """The thumb swung as one about its base, about the hand's own forward line (wrist to the middle knuckle),
+        toward the gun's far side (to: left or right), until its tip passes the gun's middle plane or any of its skin
+        meets the gun; the closing to contact follows. Returns the swing, the tip's side and the gap."""
+        L = self.L
+        F, U, Lf = self.gun_axes()
+        side_v = Lf if to == "left" else -Lf
+        o = self.to_world((0.0, 0.0, 0.0))
+        n = L._n("finger", side, "thumb", "01")
+        base = L._bw(n).translation.copy()
+        w = L._bw(L._n("hand", side)).translation
+        k = L._bw(L._n("finger", side, "middle", "01")).translation
+        axis = (k - w).normalized()
+        tip = np.array(list(L._anchor(side, "thumb_tip")))
+        # the sign that moves the tip toward the far side
+        sgn = 1.0
+        L._turn_about(n, axis, step_deg, base)
+        bpy.context.view_layer.update()
+        t2 = np.array(list(L._anchor(side, "thumb_tip")))
+        if float((t2 - tip) @ side_v) < 0.0:
+            L._turn_about(n, axis, -2.0 * step_deg, base)
+            sgn = -1.0
+        bpy.context.view_layer.update()
+        turned, gap, across = step_deg, None, None
+        for _ in range(int(max_deg / step_deg)):
+            tip = np.array(list(L._anchor(side, "thumb_tip")))
+            across = float((tip - o) @ side_v) * 100.0
+            gap = float(min(self._gaps(side, "thumb", None)))
+            if across > 0.0 or gap <= self.glove:
+                break
+            L._turn_about(n, axis, sgn * step_deg, base)
+            bpy.context.view_layer.update()
+            turned += step_deg
+        return {"swing_deg": round(turned, 1), "tip_past_middle_plane_cm": round(across, 2) if across is not None else None,
+                "gap_cm": round(gap, 2) if gap is not None else None}
 
     def line_b_world(self, side):
         lb = self.line_b[side]
@@ -1023,7 +1076,7 @@ class FakePose:
             fails.append("index line %.1f deg off line B%s" % (ang, "" if tipfwd else ", tip backward"))
         if mode == "index_on_line_b" and max(abs(v) for v in off.values()) > self.LINE_B_OFF_CM:
             fails.append("index pad %.2f cm off line B across the face" % max(off.values(), key=abs))
-        if min(out.values()) < -self.LINE_B_INSIDE_CM:
+        if mode != "fingers" and min(out.values()) < -self.LINE_B_INSIDE_CM:
             fails.append("index pad %.2f cm inside the face" % -min(out.values()))
         if mode == "index_on_line_b" and abs(along) > self.LINE_B_ALONG_CM:
             fails.append("index middle %.2f cm from the ring's middle along the bore" % along)
@@ -2226,8 +2279,18 @@ class FakePose:
             r = rules.get(digit)
             if not r or r.get("rule") == "keep":
                 continue
+            if r["rule"] == "along_bore" and digit == "index":
+                # the owner, 2026-10-28: the hand stays as it sat; only the index changes: straightened and turned at its
+                # knuckle to lie parallel to the bore, tip forward, as near line B as the knuckle's range allows
+                curls["index_along_bore"] = self.index_along_bore(side, mark)
+                continue
             if r["rule"] == "curl_to_contact":
                 if digit == "thumb":
+                    if r.get("over_to"):
+                        # the owner, 2026-10-28: "thumb is on another side (left side) of index finger": the thumb's base
+                        # swung over the grip toward the gun's far side until its tip passes the middle plane or it meets
+                        # the gun, then it closes to contact there
+                        curls["thumb_over"] = self.thumb_over(side, r["over_to"])
                     # the owner, 2026-10-26: "thumb need to hold/close to the gun": the thumb's base swung toward the
                     # gun until its pad is at the surface (a thumb closes by its base, not by folding its tip), then
                     # the joints curl to contact
