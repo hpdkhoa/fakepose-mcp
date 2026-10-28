@@ -1103,6 +1103,42 @@ class FakePose:
                 best = (c, float(a))
         self._pose_abs(side, "index", [best[1], 0.0, 0.0])
         bpy.context.view_layer.update()
+        if (self.tuning(side, "grip").get("thumb_root") == "left_face"):
+            # the owner, 2026-10-28: "straight the thumb and let the root of the thumb touch the current thumb touch
+            # point, then the tip wrap along the gun": the hand moved as one (its facing and fingers kept) so the
+            # thumb's root joint sits on the left face just under the top edge behind A, the straight thumb laid along
+            # the left face the arrow's way; the hold's rule then closes the tip onto the face
+            F, U, Lf = self.gun_axes()
+            o_l = Vector(list(A + Lf * 0.12 - U * 0.01))
+            h_l = bvh.ray_cast(o_l, Vector(list(-Lf)), 0.24)
+            T_l = np.array(list(h_l[0])) if h_l[0] is not None else A + Lf * 0.022 - U * 0.01
+            nT = unit(np.array(list(h_l[1]))) if h_l[0] is not None else unit(Lf)
+            if float(nT @ Lf) < 0.0:
+                nT = -nT
+            tn = L._n("finger", side, "thumb", "01")
+            self._pose_abs(side, "thumb", [0.0, 0.0, 0.0])
+            bpy.context.view_layer.update()
+            root = np.array(list(L._bw(L._n("finger", side, "thumb", "02")).translation))     # where the thumb leaves the hand (the owner's "root")
+            mv = (T_l + nT * (self.glove / 100.0 + 0.008)) - root        # the root's skin on the face: 0.8 cm of thumb round its bone
+            H2 = Matrix.Translation(Vector(list(mv))) @ H2
+            PH(side, H2)
+            bpy.context.view_layer.update()
+            self._pose_abs(side, "thumb", [0.0, 0.0, 0.0])
+            bpy.context.view_layer.update()
+            base = L._bw(tn).translation.copy()
+            tip = Vector(list(L._anchor(side, "thumb_tip")))
+            dt = unit(F * float(arrow.get("forward", 2.0)) + U * float(arrow.get("up", -1.0)))
+            dt = unit(dt - nT * float(dt @ nT))                            # along the face
+            q = (tip - base).normalized().rotation_difference(Vector(list(dt)))
+            if q.axis.length > 1e-6:
+                L._turn_about(tn, q.axis.normalized(), math.degrees(q.angle), base)
+            bpy.context.view_layer.update()
+            tip2 = np.array(list(L._anchor(side, "thumb_tip")))
+            rd = self.index_b_reading(side)
+            return H2, {"hand_moved_for_thumb_root_cm": round(float(np.linalg.norm(mv)) * 100.0, 2), "thumb_root_target_world": [round(float(x), 4) for x in T_l],
+                        "thumb_root_gap_cm": round(float(self._gaps(side, "thumb", None)[0]), 2), "thumb_turned_deg": round(math.degrees(q.angle), 1),
+                        "thumb_tip_left_of_middle_cm": round(float((tip2 - self.to_world((0.0, 0.0, 0.0))) @ Lf) * 100.0, 2),
+                        "index_knuckle_deg": best[1], "reading": rd, "web": self.web_a_reading(side)}
         # the thumb along the arrow: straight, its base turned so it points the arrow's way (gun axes); the hold's rule
         # then swings it onto the gun and closes it
         F, U, Lf = self.gun_axes()
