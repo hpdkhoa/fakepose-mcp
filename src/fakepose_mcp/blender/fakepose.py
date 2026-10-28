@@ -885,7 +885,12 @@ class FakePose:
                 continue
             zc = float((np.array(list(h[0])) - ring) @ U) * 100.0
             topp.append([round(yc, 1), round(zc, 2)])
-            if best is None or zc < best[0]:
+            want_y = (self.tuning(side, "grip").get("point_a") or {}).get("behind_ring_cm")
+            if want_y is not None:
+                # the owner's mark (2026-10-28, moved forward): the top of the wrist at this distance behind the ring
+                if best is None or abs(yc + float(want_y)) < abs(best[3] + float(want_y)):
+                    best = (zc, np.array(list(h[0])), np.array(list(h[1].normalized())), yc)
+            elif best is None or zc < best[0]:
                 best = (zc, np.array(list(h[0])), np.array(list(h[1].normalized())), yc)
         if best is None:
             raise ValueError("fakepose: no top of the wrist found behind the ring")
@@ -1064,36 +1069,19 @@ class FakePose:
         H1 = Matrix.Translation(Vector(list(At - W))) @ Matrix(H)
         PH(side, H1)
         bpy.context.view_layer.update()
-        # the palm onto the grip's right face: rolled about the bore's line through the web (the web stays on A) by the
-        # least angle that brings the palm's skin out of the stock toward the gun's right (a hand wraps over the top
-        # of the wrist; without this the palm hangs through the stock's middle, run arrow 2026-10-28)
+        # the palm onto the grip's right face (the owner's plan, 2026-10-28, step 2): no roll; the hand slid toward
+        # the gun's right by the wrist's half width, measured by a side ray at A's place 2 cm under its top, so the
+        # palm sits on the face instead of inside it; the web keeps A's height and place along the bore
         F_, U_, Lf_ = self.gun_axes()
-        _b, _T, sidev, kind, segi = L._skin_static()
-        sc = 1 if side == "r" else 2
-        psel = np.nonzero((sidev == sc) & (kind == 2))[0][::2]
-        pv = Vector(list(At))
-        roll_out, roll_depth = 0.0, None
-        pc0 = np.array(list(L._bw(L._n("finger", side, "middle", "01")).translation))
-        for sg in (1.0, -1.0):
-            Hs = Matrix.Translation(pv) @ Matrix.Rotation(math.radians(sg * 5.0), 4, Vector(list(F_))) @ Matrix.Translation(-pv) @ H1
-            PH(side, Hs)
-            bpy.context.view_layer.update()
-            pc = np.array(list(L._bw(L._n("finger", side, "middle", "01")).translation))
-            if float((pc - pc0) @ -Lf_) > 0.0:
-                sgn_ = sg
-                break
+        bvh = self.gun_bvh()
+        o_ = Vector(list(A - U_ * 0.02 - Lf_ * 0.12))
+        h_ = bvh.ray_cast(o_, Vector(list(Lf_)), 0.24)
+        half_w = float((np.array(list(h_[0])) - A) @ -Lf_) if h_[0] is not None else 0.022
+        H1 = Matrix.Translation(Vector(list(-Lf_ * half_w))) @ H1
         PH(side, H1)
         bpy.context.view_layer.update()
-        for k in range(0, 37):
-            th_ = sgn_ * k * 2.5
-            Hs = Matrix.Translation(pv) @ Matrix.Rotation(math.radians(th_), 4, Vector(list(F_))) @ Matrix.Translation(-pv) @ H1
-            PH(side, Hs)
-            bpy.context.view_layer.update()
-            dp = float(np.min(self.gun_signed(L._skin_arrays()[0][psel])))
-            roll_out, roll_depth = th_, dp
-            if dp >= 0.0:
-                break
-        H1 = Hs
+        roll_out, roll_depth = 0.0, None
+        slid_right_cm = round(half_w * 100.0, 2)
         # about the palm's normal through the web: the index's line aimed at line B's middle
         n = unit(np.array(list(L._palm_facing(side))))
         d = unit(np.array(L.index_pad_line(side)["dir"]))
@@ -1129,10 +1117,29 @@ class FakePose:
         if ax.length > 1e-6:
             L._turn_about(tn, ax.normalized(), ang, base)
         bpy.context.view_layer.update()
+        # step 3: across the top to the left side: the base swung about the hand's forward line until the tip is left
+        # of the middle plane (at most 120 deg), the arrow's slant kept as far as the swing allows
+        w_ = L._bw(L._n("hand", side)).translation
+        k_ = L._bw(L._n("finger", side, "middle", "01")).translation
+        axis_ = (k_ - w_).normalized()
+        o0 = self.to_world((0.0, 0.0, 0.0))
+        tip_x = lambda: float((np.array(list(L._anchor(side, "thumb_tip"))) - o0) @ Lf) * 100.0     # noqa: E731
+        x0 = tip_x()
+        L._turn_about(tn, axis_, 3.0, base)
+        bpy.context.view_layer.update()
+        sgn_ = 1.0 if tip_x() > x0 else -1.0
+        if sgn_ < 0:
+            L._turn_about(tn, axis_, -6.0, base)
+            bpy.context.view_layer.update()
+        swung = 3.0
+        while tip_x() <= 0.0 and swung < 120.0:
+            L._turn_about(tn, axis_, sgn_ * 3.0, base)
+            bpy.context.view_layer.update()
+            swung += 3.0
         tip2 = np.array(list(L._anchor(side, "thumb_tip")))
         rd = self.index_b_reading(side)
-        return H2, {"web_moved_to_A_cm": round(float(np.linalg.norm(At - W)) * 100.0, 2), "palm_rolled_onto_right_face_deg": round(roll_out, 1),
-                    "palm_least_depth_after_roll_cm": round(roll_depth, 2) if roll_depth is not None else None, "turned_about_palm_deg": round(th, 1),
+        return H2, {"web_moved_to_A_cm": round(float(np.linalg.norm(At - W)) * 100.0, 2), "slid_right_cm": slid_right_cm,
+                    "thumb_swung_across_deg": round(swung, 1), "turned_about_palm_deg": round(th, 1),
                     "index_knuckle_deg": best[1], "index_aim_cos": round(best[0], 4), "thumb_turned_deg": round(ang, 1),
                     "thumb_dir_to_arrow_deg": round(math.degrees(math.acos(min(1.0, max(-1.0, float(unit(tip2 - np.array(list(base))) @ dt))))), 1),
                     "thumb_tip_left_of_middle_cm": round(float((tip2 - self.to_world((0.0, 0.0, 0.0))) @ Lf) * 100.0, 2),
