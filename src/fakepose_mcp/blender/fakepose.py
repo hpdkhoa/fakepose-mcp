@@ -352,6 +352,7 @@ class FakePose:
     # --- joint limits in the IK (the owner, 2026-10-25: "go with the joint limits") -----------------------------------
     WRIST_MAX, ELBOW_MIN, ELBOW_MAX, ELBOW_UNDER_CM = 30.0, 5.0, 150.0, 2.0
     TURN_MAX = 40.0            # the hand's turn on its palm's normal, at most (a cant of the hand on a grip)
+    ELBOW_OUT_CM = 3.0         # the elbow at least this far outside the gun's middle plane, on its own side (2026-10-28)
     # the owner (2026-10-27): "move the shoulder back so the arm is extend then the wrist can be flatten": when no
     # elbow and no hand turn keeps the wrist inside, or the arm is short, the collarbone turns so the shoulder moves
     # back (toward the body, against the view's forward), at most SHOULDER_BACK_MAX_CM from the template's place. The
@@ -423,6 +424,14 @@ class FakePose:
         v = np.cross(axis, u)
         hd = self._knuckle_dir(side, M)
         W = S + axis * d
+        # the elbow points outward, on its arm's own side of the gun (the owner, 2026-10-28: "it must point outside
+        # like the left arm"): at least ELBOW_OUT_CM from the gun's middle plane on that side, a wall like the others
+        try:
+            _F, _U, Lf_ = self.gun_axes()
+            go_ = self.to_world((0.0, 0.0, 0.0))
+            out_dir = -Lf_ if side == "r" else Lf_
+        except Exception:
+            go_, out_dir = None, None
         best = None
         for k in range(72):
             a = 2.0 * math.pi * k / 72
@@ -432,6 +441,9 @@ class FakePose:
             bend = 180.0 - math.degrees(math.acos(max(-1.0, min(1.0, float(unit(S - E) @ fore)))))
             under = float((S - E)[2]) * 100.0
             viol = max(0.0, self.ELBOW_UNDER_CM - under) + max(0.0, self.ELBOW_MIN - bend) + max(0.0, bend - self.ELBOW_MAX)
+            if go_ is not None:
+                side_cm = float((E - go_) @ out_dir) * 100.0
+                viol += max(0.0, self.ELBOW_OUT_CM - side_cm)
             key = (round(viol, 2), round(wrist, 1))
             if best is None or key < best[0]:
                 best = (key, E, wrist, bend, under)
