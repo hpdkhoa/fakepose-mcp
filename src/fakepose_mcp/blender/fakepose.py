@@ -684,6 +684,19 @@ class FakePose:
         L = self.L
         return L._anchor(side, "thumb_tip") if digit == "thumb" else L._finger_tip(digit, side)
 
+    def gate_again(self, side, mark, kind=None, fix=True, tag="final"):
+        """The gate run once more on the hold as it stands now (the owner, 2026-10-28: "gate must behind all changed",
+        "gate the pulled hold too"): after the caller's last placement of the hand, or at the pulled gun place the
+        clips play. The hold's own rules (as its grasp used them). With fix the digits are mended as hold_gate does;
+        without, the hold is measured as it is. The result is kept on the hold's report entry as gate_<tag>."""
+        hr = (getattr(self, "_hold_rules", {}) or {}).get("%s:%s" % (side, mark)) or {}
+        kind = kind or hr.get("kind", "palm")
+        rules = hr.get("rules") or (self.preset(side, mark, kind)[1] or {}).get("fingers") or {}
+        self._gate_mark = mark
+        gate = self.hold_gate(side, kind, rules, fix=fix)
+        self.report.setdefault("holds", {}).setdefault("%s:%s:%s" % (side, mark, kind), {})["gate_" + tag] = gate
+        return gate
+
     def hold_gate(self, side, kind, rules, fix=True):
         """Every hold measured before it is used: each digit the hold uses touches its part (tip gap), no digit inside
         the mesh from any side, no finger twisted out of its plane, the thumb on the gun, the wrist and elbow inside
@@ -722,6 +735,17 @@ class FakePose:
             except Exception as e_:
                 tw = {"error": repr(e_)[:80]}
             lim = dict((getattr(self, "last_limits", {}) or {}).get(side) or {})
+            try:
+                # the same joints read off the bones as they stand now (the limits above are the last placement's
+                # prediction; 2026-10-27 the two disagreed on the M24 grip: hold 47.9, clip 29.2)
+                S_, E_, W_ = (L._bw(L._n(b_, side)).translation for b_ in ("upperarm", "lowerarm", "hand"))
+                K_ = L._bw(L._n("finger", side, "middle", "01")).translation
+                lim["wrist_bones_deg"] = round(math.degrees((W_ - E_).angle(K_ - W_)), 1)
+                lim["elbow_bones_deg"] = round(180.0 - math.degrees((S_ - E_).angle(W_ - E_)), 1)
+                lim["hand_cm"] = [round(x * 100.0, 2) for x in W_]
+                lim["shoulder_cm"] = [round(x * 100.0, 2) for x in S_]
+            except Exception as e_:
+                lim["wrist_bones_deg"] = repr(e_)[:60]
             fails = []
             for d in used:
                 if not g[d]["touch"]:
@@ -1742,6 +1766,9 @@ class FakePose:
             # to contact by the authored preset's rules, from those turns (an open hand beside a slimmer handguard is
             # not a hold)
             rules = (p or {}).get("fingers") or {}
+        if not hasattr(self, "_hold_rules"):
+            self._hold_rules = {}
+        self._hold_rules["%s:%s" % (side, mark)] = {"kind": kind, "rules": rules}     # for gate_again
         # a digit that starts inside the part (the open hand's own curl already past the surface) opens first, then
         # closes to contact from outside: a finger through the gun is not a hold, from any side (the owner, 2026-10-26)
         in_gun0 = self.hand_in_gun(side)
