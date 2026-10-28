@@ -274,8 +274,12 @@ class FakePose:
         F, U, _Lf = self.gun_axes()
         Rd = frame_turn(unit(s["front"] - s["rear"]), U, VF, VU)
 
+        # the gun lowered against the eye (the owner, 2026-10-28: "try ... lower": the eye higher over the stock, as a
+        # scope mounted higher in its rings would set it): the sight line AIM_DROP_CM under the eye, reported as such
+        drop = float(getattr(self, "AIM_DROP_CM", 0.0) or 0.0) / 100.0
+
         def place(d):
-            t = eye + VF * d - Rd @ s["rear"]
+            t = eye + VF * d - VU * drop - Rd @ s["rear"]
             D = np.eye(4)
             D[:3, :3], D[:3, 3] = Rd, t
             return D
@@ -292,7 +296,7 @@ class FakePose:
             D2[:3, 3] = VF * dd
             self.gk["move_gun"](Matrix(D2.tolist()))
             s2 = self.sights()
-            out = {"eye_to_rear_sight_cm": round(float(np.linalg.norm(s2["rear"] - eye)) * 100.0, 2),
+            out = {"aim_drop_cm": round(drop * 100.0, 2), "eye_to_rear_sight_cm": round(float(np.linalg.norm(s2["rear"] - eye)) * 100.0, 2),
                    "sight_line_off_the_eye_cm": round(float(np.linalg.norm(np.cross(s2["rear"] - eye, unit(s2["front"] - s2["rear"])))) * 100.0, 3),
                    "bore_to_view_deg": round(math.degrees(math.acos(min(1.0, float(unit(s2["front"] - s2["rear"]) @ VF)))), 3),
                    "rule": "the cheek weld: the rear sight %.1f cm in front of the eye (%s)" % (

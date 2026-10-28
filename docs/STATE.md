@@ -48,6 +48,12 @@ My own choices, told to the owner: the rifle family keeps the first-person templ
 
 ## Queued asks
 
+- 2026-10-28, the owner: "try stock hold and lower then show me the evidences" (done, five runs, both gates each,
+  `report/tune/M24_options_compare.png`): stock hold 1 cm up wrist 28.4 / pinky 2.12 off; 2 cm up wrist 28.5 / pinky
+  0.79 off; the gun lowered against the eye (job option `aim_drop_cm`, fakepose AIM_DROP_CM) 2 cm wrist 35.7, 4 cm
+  wrist 29.7, 6.5 cm wrist 28.9, pinky 1.36 to 1.69 off. Every pulled gate passes the joints, the pinky fails on all.
+  None passes the gate. Waiting for the owner's decision on the M24 grip.
+
 - 2026-10-28, the owner: "gate must behind all changed. And gate the pulled hold too" (done): fakepose `gate_again`;
   Gun Kit's final gate before the hold snapshot (fix on, the clips take the hold as it leaves it, `report["gate_final"]`,
   the grasp's gate kept as `gate_at_solve`) and the pulled gate before the clips (the gun at the idle pull, hands
