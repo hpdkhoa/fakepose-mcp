@@ -1117,29 +1117,73 @@ class FakePose:
         if ax.length > 1e-6:
             L._turn_about(tn, ax.normalized(), ang, base)
         bpy.context.view_layer.update()
-        # step 3: across the top to the left side: the base swung about the hand's forward line until the tip is left
-        # of the middle plane (at most 120 deg), the arrow's slant kept as far as the swing allows
+        # step 3 (the owner, 2026-10-28: "wrap the thumb over the left side of the gun"): a wrap, not a straight reach:
+        # the thumb's base laid across the top of the wrist toward the gun's left, then its two joints bent, step by
+        # step, until the tip's skin meets the left face with the tip past the middle plane
+        base = L._bw(tn).translation.copy()
+        tip = Vector(list(L._anchor(side, "thumb_tip")))
+        q2 = (tip - base).normalized().rotation_difference(Vector(list(Lf - U * 0.15)).normalized())
+        if q2.axis.length > 1e-6:
+            L._turn_about(tn, q2.axis.normalized(), math.degrees(q2.angle), base)
+        bpy.context.view_layer.update()
+        swung = round(math.degrees(q2.angle), 1)
+        o0 = self.to_world((0.0, 0.0, 0.0))
+        TL_ = L._thumb_limits()
+        # segment one on the top, not in it: the base swung away from the gun (about the hand's forward line) until
+        # its skin clears the top by the glove, at most 40 degrees
         w_ = L._bw(L._n("hand", side)).translation
         k_ = L._bw(L._n("finger", side, "middle", "01")).translation
         axis_ = (k_ - w_).normalized()
-        o0 = self.to_world((0.0, 0.0, 0.0))
-        tip_x = lambda: float((np.array(list(L._anchor(side, "thumb_tip"))) - o0) @ Lf) * 100.0     # noqa: E731
-        x0 = tip_x()
-        L._turn_about(tn, axis_, 3.0, base)
+        lifted = 0.0
+        g1 = float(self._gaps(side, "thumb", None)[0])
+        if g1 < self.glove:
+            L._turn_about(tn, axis_, 2.0, base)
+            bpy.context.view_layer.update()
+            sg_ = 1.0 if float(self._gaps(side, "thumb", None)[0]) > g1 else -1.0
+            if sg_ < 0:
+                L._turn_about(tn, axis_, -4.0, base)
+                bpy.context.view_layer.update()
+            lifted = 2.0
+            while float(self._gaps(side, "thumb", None)[0]) < self.glove and lifted < 10.0:
+                L._turn_about(tn, axis_, sg_ * 2.0, base)
+                bpy.context.view_layer.update()
+                lifted += 2.0
+        za = float(A @ U)
+        # the thumb's pad onto the top: rolled about its own line until a small bend moves the tip downward (the flex
+        # plane set so the joints fold over the edge, down the left face, not forward or up)
+        base = L._bw(tn).translation.copy()
+        L._set_thumb_bend(side, 0.0, 0.0, TL_)
         bpy.context.view_layer.update()
-        sgn_ = 1.0 if tip_x() > x0 else -1.0
-        if sgn_ < 0:
-            L._turn_about(tn, axis_, -6.0, base)
+        t0 = np.array(list(L._anchor(side, "thumb_tip")))
+        tax = (Vector(list(t0)) - base).normalized()
+        L._set_thumb_bend(side, 15.0, 15.0, TL_)
+        bpy.context.view_layer.update()
+        dmv = np.array(list(L._anchor(side, "thumb_tip"))) - t0
+        L._set_thumb_bend(side, 0.0, 0.0, TL_)
+        bpy.context.view_layer.update()
+        ta = np.array(list(tax))
+        dp_ = unit(dmv - ta * float(dmv @ ta))
+        wn = unit(-U - ta * float(-U @ ta))
+        roll = math.degrees(math.atan2(float(np.cross(dp_, wn) @ ta), float(dp_ @ wn)))
+        L._turn_about(tn, tax, roll, base)
+        bpy.context.view_layer.update()
+        wrap = None
+        for b2 in np.arange(0.0, 90.0 + 1e-9, 5.0):
+            L._set_thumb_bend(side, float(b2), float(b2), TL_)
             bpy.context.view_layer.update()
-        swung = 3.0
-        while tip_x() <= 0.0 and swung < 120.0:
-            L._turn_about(tn, axis_, sgn_ * 3.0, base)
-            bpy.context.view_layer.update()
-            swung += 3.0
+            gg = self._gaps(side, "thumb", None)
+            tipw = np.array(list(L._anchor(side, "thumb_tip")))
+            tx = float((tipw - o0) @ Lf) * 100.0
+            tz = (float(tipw @ U) - za) * 100.0
+            wrap = {"base_lifted_deg": lifted, "bend_02_deg": float(b2), "bend_03_deg": float(b2), "gaps_cm": [round(float(x), 2) for x in gg],
+                    "tip_left_of_middle_cm": round(tx, 2), "tip_under_A_cm": round(-tz, 2)}
+            if float(gg[2]) <= self.glove and tx > 0.0 and tz < -0.5:
+                break
+        self._thumb_wrap = wrap
         tip2 = np.array(list(L._anchor(side, "thumb_tip")))
         rd = self.index_b_reading(side)
         return H2, {"web_moved_to_A_cm": round(float(np.linalg.norm(At - W)) * 100.0, 2), "slid_right_cm": slid_right_cm,
-                    "thumb_swung_across_deg": round(swung, 1), "turned_about_palm_deg": round(th, 1),
+                    "thumb_laid_across_deg": swung, "thumb_wrap": getattr(self, "_thumb_wrap", None), "turned_about_palm_deg": round(th, 1),
                     "index_knuckle_deg": best[1], "index_aim_cos": round(best[0], 4), "thumb_turned_deg": round(ang, 1),
                     "thumb_dir_to_arrow_deg": round(math.degrees(math.acos(min(1.0, max(-1.0, float(unit(tip2 - np.array(list(base))) @ dt))))), 1),
                     "thumb_tip_left_of_middle_cm": round(float((tip2 - self.to_world((0.0, 0.0, 0.0))) @ Lf) * 100.0, 2),
