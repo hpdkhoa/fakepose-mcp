@@ -89,3 +89,17 @@ My own choices, told to the owner: the rifle family keeps the first-person templ
 1. Read OWNER_FEEDBACK.md from the last entry you remember; list every ask without a "result" line after it.
 2. Run the AR15 through Gun Kit (`clips_only.py AR15`, 9 minutes) and read `hands.json`: `pose_rules` (11 rules) and each hold's `gate`.
 3. Compare with the last table in POSE_RULES.md; anything worse is a regression to report before going on.
+
+## 2026-10-28, queued ask: the M24 grip by line B (the owner: thumb on, index on the ring's middle, gun to the shoulder, sight line on the eye)
+
+Built: fakepose `measure_line_b` (side rays on a grid round the trigger mark, the trigger's polygons left out; the ring
+= the closed opening; the face hit above it at both ends, moved down to the ring's centre height; parallel to the bore),
+`place_index_on_b` (the straight index's pad line turned onto B, its middle on B's middle the glove out, the hand rolled
+about B to face the palm into the side and out of the mesh), `index_b_reading` (the gate's index item: 5 deg, 0.5 cm
+across, 0.1 in, 1 cm along; mine, told); a hold with tuning `place: index_on_line_b` skips the slide, the palm turn, the
+reach and the push-out, and TURN_MAX becomes 0. Gun Kit: touch points first (line B checked before any hand; a miss
+stops the run; arm_touch.png), line B and the index pads in arm_view's json. M24 overlay r:grip: place, shift 0.
+Result: line B PASS its definition; the index on it (0.3 deg); joints PASS; the hand inside the stock (web 1.8 cm in,
+thumb base 2.8, thumb tip 1.47 inside; stock wrist 1.8 cm proud of the guard's face): gate FAIL. Waiting for the owner's
+choice (OWNER_FEEDBACK.md, 2026-10-28). Note: arm_touch.png renders black (no lights yet at that point): the picture
+script uses the hold's render with the touch json's points; fix when the owner continues this line.

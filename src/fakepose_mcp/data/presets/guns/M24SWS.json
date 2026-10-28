@@ -4,13 +4,14 @@
  "source": "made 2026-10-27 for the gate's authoring of the M24 holds",
  "holds": {
   "r:grip": {
+   "place": "index_on_line_b",
    "shift_cm": {
     "forward": 0.0,
-    "up": 1.5,
+    "up": 0.0,
     "left": 0.0
    },
    "curl": "together",
-   "why": "2026-10-27: the fingers square across the wrist line (forward 0.82, up -0.57) made the wrist 64.6 (from 48.1) and left ring and pinky off: the family's facing kept; the wrist comes from the forearm rising from a low elbow"
+   "why": "2026-10-28, the owner: 'thumb grab stay on, index finger stay on middle of trigger ring, then move the gun to shoulder and eye view is the same with human eye line': the hand placed by line B (measured on the mesh), the thumb's rule kept, the aim place as before; the earlier shift (up 1.5, 27 Oct) is replaced by the placement"
   },
   "l:support": {
    "shift_cm": {

@@ -701,6 +701,243 @@ class FakePose:
         self.report.setdefault("holds", {}).setdefault("%s:%s:%s" % (side, mark, kind), {})["gate_" + tag] = gate
         return gate
 
+    # --- line B (the owner, 2026-10-28: "index finger stay on middle of trigger ring"; the definition the owner set in
+    # Pose Lab, 2026-10-22: parallel to the bore, on the frame's firing-side face, its middle at the trigger ring's
+    # middle height) -------------------------------------------------------------------------------------------------
+    LINE_B_ANGLE_DEG = 5.0       # the index's pad line within this of line B (mine, 2026-10-28, told)
+    LINE_B_OFF_CM = 0.5          # each pad within this of line B across the face
+    LINE_B_INSIDE_CM = 0.1       # no pad past the face by more than this
+    LINE_B_ALONG_CM = 1.0        # the pad line's middle within this of the ring's middle along the bore
+
+    def gun_bvh_without(self, bones):
+        """The gun's surface without the parts the named bones move (the trigger sits in the ring's opening: a side
+        ray through the hole hits it, and the trigger is not the frame's face), world, as posed now."""
+        L = self.L
+        obs = [o for o in bpy.context.scene.objects if o.type == "MESH" and o not in L.meshes and not o.hide_viewport
+               and o.vertex_groups.get("hand_r") is None]
+        dg = bpy.context.evaluated_depsgraph_get()
+        verts, tris, cut = [], [], 0
+        for o in obs:
+            gi = {g_.index for g_ in o.vertex_groups if g_.name in bones}
+            ev = o.evaluated_get(dg)
+            me = ev.to_mesh()
+            M = ev.matrix_world
+            base = len(verts)
+            verts.extend([tuple(M @ v.co) for v in me.vertices])
+            skip = set()
+            if gi and len(o.data.vertices) == len(me.vertices):
+                skip = {v.index for v in o.data.vertices if any(g_.group in gi and g_.weight > 0.5 for g_ in v.groups)}
+            me.calc_loop_triangles()
+            for t in me.loop_triangles:
+                if any(i in skip for i in t.vertices):
+                    cut += 1
+                    continue
+                tris.append(tuple(base + i for i in t.vertices))
+            ev.to_mesh_clear()
+        self._bvh_cut_tris = cut
+        return BVHTree.FromPolygons(verts, tris)
+
+    def measure_line_b(self, side="r", half_cm=6.0, up_cm=5.0, step_cm=0.2):
+        """Line B measured on the gun's mesh, from the trigger mark: side rays from the firing side on a grid round the
+        mark (the trigger's own polygons left out) find the ring's opening (the closed run of rays that pass through);
+        its centre is the ring's middle; the frame's face is hit just above the opening at both ends of its length;
+        those two hits move straight down to the ring's centre height, and the line runs through their middle parallel
+        to the bore, the opening's length long (Pose Lab's definition, the owner's decisions 2026-10-21/22). Kept in
+        the gun's frame so it rides the gun; checked against its definition before any hand is placed."""
+        L = self.L
+        m = self.facts["marks"]
+        if "trigger" not in m:
+            raise ValueError("fakepose: line B needs the trigger mark")
+        F, U, Lf = self.gun_axes()
+        S = -Lf if side == "r" else Lf                      # the firing side
+        T = self.to_world(m["trigger"])
+        tb = [p_.get("bone") for n_, p_ in (self.facts.get("parts") or {}).items() if n_ == "trigger" and p_.get("bone")]
+        bvh = self.gun_bvh_without(tb + ["Trigger", "trigger"])
+        A = np.arange(-half_cm, half_cm + 1e-9, step_cm)
+        Bv = np.arange(-up_cm, up_cm + 1e-9, step_cm)
+        na, nb = len(A), len(Bv)
+        hit = np.full((na, nb), np.nan)                     # the face's distance from the middle plane toward the firing side, cm; nan: the ray passed
+        for i, a in enumerate(A):
+            for j, b in enumerate(Bv):
+                o = Vector(list(T + F * (a / 100.0) + U * (b / 100.0) + S * 0.12))
+                h = bvh.ray_cast(o, Vector(list(-S)), 0.24)
+                if h[0] is not None:
+                    hit[i, j] = float((np.array(list(h[0])) - T) @ S) * 100.0
+        open_ = np.isnan(hit)
+        i0, j0 = int(np.argmin(np.abs(A))), int(np.argmin(np.abs(Bv)))
+        if not open_[i0, j0]:
+            cand = np.argwhere(open_)
+            if not len(cand):
+                raise ValueError("fakepose: no opening beside the trigger mark")
+            k = int(np.argmin(((cand - np.array([i0, j0])) ** 2).sum(1)))
+            i0, j0 = (int(x) for x in cand[k])
+        comp = np.zeros_like(open_)
+        comp[i0, j0] = True
+        stack = [(i0, j0)]
+        while stack:
+            i, j = stack.pop()
+            for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                ii, jj = i + di, j + dj
+                if 0 <= ii < na and 0 <= jj < nb and open_[ii, jj] and not comp[ii, jj]:
+                    comp[ii, jj] = True
+                    stack.append((ii, jj))
+        cells = np.argwhere(comp)
+        if cells[:, 0].min() == 0 or cells[:, 0].max() == na - 1 or cells[:, 1].min() == 0 or cells[:, 1].max() == nb - 1:
+            raise ValueError("fakepose: the opening by the trigger runs off the %.0f x %.0f cm grid (not a closed ring)" % (2 * half_cm, 2 * up_cm))
+        ac, bc = float(A[cells[:, 0]].mean()), float(Bv[cells[:, 1]].mean())
+        jc = int(np.argmin(np.abs(Bv - bc)))
+        row = [i for i in range(na) if comp[i, jc]]
+        a0, a1 = float(A[min(row)]), float(A[max(row)])
+
+        def top_hit(i):
+            jt = max(j for j in range(nb) if comp[i, j]) + 1
+            while jt < nb and np.isnan(hit[i, jt]):
+                jt += 1
+            return None if jt >= nb else (float(A[i]), float(Bv[jt]), float(hit[i, jt]))
+        e0, e1 = top_hit(min(row)), top_hit(max(row))
+        if e0 is None or e1 is None:
+            raise ValueError("fakepose: the frame's face above the ring's opening was not hit")
+        x_face = 0.5 * (e0[2] + e1[2])
+        hl = (a1 - a0) / 2.0
+        ring = T + F * (ac / 100.0) + U * (bc / 100.0)
+        mid = ring + S * (x_face / 100.0)
+        B0, B1 = mid - F * (hl / 100.0), mid + F * (hl / 100.0)
+        gb = bvh.ray_cast(Vector(list(ring - U * 0.08)), Vector(list(U)), 0.08)
+        bottom = np.array(list(gb[0])) if gb[0] is not None else None
+        Rw = self.gk["bone_world"]("Root")
+        Ri = Rw.inverted()
+        loc = lambda v: list(Ri @ Vector(list(v)))                           # noqa: E731
+        dirl = lambda v: list((Ri.to_3x3() @ Vector(list(v))).normalized())  # noqa: E731
+        chk = {"middle_height_off_ring_centre_cm": round(float((mid - ring) @ U) * 100.0, 3),
+               "ends_height_off_ring_centre_cm": [round(float((e_ - ring) @ U) * 100.0, 3) for e_ in (B0, B1)],
+               "ends_on_firing_side_cm": [round(float((e_ - ring) @ S) * 100.0, 3) for e_ in (B0, B1)],
+               "top_edge_faces_cm": [round(e0[2], 3), round(e1[2], 3)],
+               "ring_centre_from_trigger_mark_cm": [round(ac, 2), round(bc, 2)],
+               "ring_centre_in_the_opening": bool(comp[int(np.argmin(np.abs(A - ac))), jc]),
+               "line_to_bore_deg": 0.0}
+        chk["ok"] = (abs(chk["middle_height_off_ring_centre_cm"]) <= 0.05 and all(v_ >= 0.2 for v_ in chk["ends_on_firing_side_cm"])
+                     and chk["ring_centre_in_the_opening"] and math.hypot(ac, bc) <= 3.0 and abs(e0[2] - e1[2]) <= 0.5)
+        if not hasattr(self, "line_b"):
+            self.line_b = {}
+        self.line_b[side] = {"B0": loc(B0), "B1": loc(B1), "mid": loc(mid), "ring": loc(ring), "dir": dirl(F), "normal": dirl(S),
+                             "bottom": loc(bottom) if bottom is not None else None}
+        out = {"side": side, "how": "side rays from the firing side on a %.1f cm grid round the trigger mark, the trigger's polygons left out; "
+                                    "the ring = the closed opening they pass through; the frame's face hit just above the opening at both ends, "
+                                    "moved straight down to the ring's centre height; the line parallel to the bore through their middle" % step_cm,
+               "definition": "parallel to the bore, on the frame's firing-side face, its middle at the trigger ring's middle height (the owner, 2026-10-21/22)",
+               "ring_centre_gun_cm": [round(x * 100.0, 2) for x in loc(ring)], "ring_length_cm": round(a1 - a0, 2),
+               "ring_height_cm": round(float(Bv[cells[:, 1]].max() - Bv[cells[:, 1]].min()), 2), "opening_cells": int(comp.sum()),
+               "face_from_middle_plane_cm": round(x_face, 3), "ends_gun_cm": [[round(x * 100.0, 2) for x in loc(e_)] for e_ in (B0, B1)],
+               "guard_bottom_under_centre_cm": round(float((ring - bottom) @ U) * 100.0, 2) if bottom is not None else None,
+               "trigger_tris_left_out": getattr(self, "_bvh_cut_tris", 0), "check": chk}
+        self.report.setdefault("line_b", {})[side] = out
+        return out
+
+    def line_b_world(self, side):
+        lb = self.line_b[side]
+        Rw = self.gk["bone_world"]("Root")
+        w = lambda v: np.array(list(Rw @ Vector(v)))                           # noqa: E731
+        d = lambda v: unit(np.array(list(Rw.to_3x3() @ Vector(v))))           # noqa: E731
+        return {"B0": w(lb["B0"]), "B1": w(lb["B1"]), "mid": w(lb["mid"]), "ring": w(lb["ring"]), "dir": d(lb["dir"]), "normal": d(lb["normal"]),
+                "bottom": w(lb["bottom"]) if lb.get("bottom") else None}
+
+    def index_b_reading(self, side):
+        """Where the straight index lies against line B, as posed now: its pad line's angle to B, each pad across the
+        face from B (cm), each pad out past the face (cm, + outside), the pad line's middle from the ring's middle along
+        the bore; the faults by the thresholds above."""
+        L = self.L
+        lb = self.line_b_world(side)
+        dB, nF = lb["dir"], lb["normal"]
+        uB = unit(np.cross(nF, dB))
+        Li = L.index_pad_line(side)
+        d = unit(np.array(Li["dir"]))
+        ks = sorted(Li["pads"])
+        ang = math.degrees(math.acos(min(1.0, abs(float(d @ dB)))))
+        off = {str(k): round(float((Li["pads"][k] - lb["mid"]) @ uB) * 100.0, 2) for k in ks}
+        out = {str(k): round(float((Li["pads"][k] - lb["mid"]) @ nF) * 100.0, 2) for k in ks}
+        along = round(float((np.array(Li["centre"]) - lb["mid"]) @ dB) * 100.0, 2)
+        tipfwd = bool(float(d @ dB) > 0.0)
+        fails = []
+        if ang > self.LINE_B_ANGLE_DEG or not tipfwd:
+            fails.append("index line %.1f deg off line B%s" % (ang, "" if tipfwd else ", tip backward"))
+        if max(abs(v) for v in off.values()) > self.LINE_B_OFF_CM:
+            fails.append("index pad %.2f cm off line B across the face" % max(off.values(), key=abs))
+        if min(out.values()) < -self.LINE_B_INSIDE_CM:
+            fails.append("index pad %.2f cm inside the face" % -min(out.values()))
+        if abs(along) > self.LINE_B_ALONG_CM:
+            fails.append("index middle %.2f cm from the ring's middle along the bore" % along)
+        return {"angle_to_B_deg": round(ang, 2), "tip_forward": tipfwd, "pads_across_face_cm": off, "pads_out_past_face_cm": out,
+                "middle_along_bore_cm": along, "fails": fails, "pass": not fails,
+                "pads_world": {str(k): [round(float(x), 4) for x in Li["pads"][k]] for k in ks}}
+
+    def place_index_on_b(self, side, H, into):
+        """The hand placed by line B (the owner, 2026-10-28: "index finger stay on middle of trigger ring"): from the
+        preset's facing H, the straight index's pad line turned parallel to line B (tip forward) about its middle,
+        moved so that middle sits on line B's middle the glove's thickness outside the face, then rolled about line B
+        (the one freedom left; mine, told): first to face the palm into the gun's side as the preset says, then out
+        only until the palm and the index are outside the mesh. Returns (the hand's matrix, the readings)."""
+        L = self.L
+        PH = getattr(L, "_put_hand_unlimited", None) or L._put_hand
+        L.natural_open(side, index_extended=True)
+        bpy.context.view_layer.update()
+        PH(side, H)
+        bpy.context.view_layer.update()
+        lb = self.line_b_world(side)
+        dB, nF, mid = lb["dir"], lb["normal"], lb["mid"]
+        Li = L.index_pad_line(side)
+        d, c = unit(np.array(Li["dir"])), np.array(Li["centre"])
+        q = Vector(list(d)).rotation_difference(Vector(list(dB)))
+        R1 = Matrix.Translation(Vector(list(c))) @ q.to_matrix().to_4x4() @ Matrix.Translation(Vector(list(-c)))
+        H1 = R1 @ Matrix(H)
+        PH(side, H1)
+        bpy.context.view_layer.update()
+        c1 = np.array(L.index_pad_line(side)["centre"])
+        piv = mid + nF * (self.glove / 100.0)
+        t = piv - c1
+        H2 = Matrix.Translation(Vector(list(t))) @ H1
+        PH(side, H2)
+        bpy.context.view_layer.update()
+        f = unit(np.array(list(L._palm_facing(side))))
+        into = unit(np.asarray(into, dtype=float))
+        fp, ip = f - dB * float(f @ dB), into - dB * float(into @ dB)
+        th0 = math.degrees(math.atan2(float(np.cross(fp, ip) @ dB), float(fp @ ip)))
+        pv = Vector(list(piv))
+
+        def at(theta):
+            return Matrix.Translation(pv) @ Matrix.Rotation(math.radians(theta), 4, Vector(list(dB))) @ Matrix.Translation(-pv) @ H2
+        _b, _T, sidev, kind, segi = L._skin_static()
+        sc = 1 if side == "r" else 2
+        sel = np.nonzero((sidev == sc) & ((kind == 2) | ((kind == 3) & (segi >= 3) & (segi <= 5))))[0][::3]
+
+        def depth(theta):
+            PH(side, at(theta))
+            bpy.context.view_layer.update()
+            P = L._skin_arrays()[0]
+            return float(np.min(self.gun_signed(P[sel])))
+        chosen, best, tried = None, None, []
+        for k in range(0, 25):
+            for sg in ((1.0,) if k == 0 else (1.0, -1.0)):
+                th = th0 + sg * k * 2.5
+                dp = depth(th)
+                tried.append([round(th, 1), round(dp, 2)])
+                if best is None or dp > best[1]:
+                    best = (th, dp)
+                if dp >= 0.0:
+                    chosen = (th, dp)
+                    break
+            if chosen is not None:
+                break
+        note = None
+        if chosen is None:
+            chosen, note = best, "no roll within 60 degrees puts the palm and the index outside: the least inside kept"
+        H3 = at(chosen[0])
+        PH(side, H3)
+        bpy.context.view_layer.update()
+        rd = self.index_b_reading(side)
+        return H3, {"turned_to_B_deg": round(math.degrees(q.angle), 2), "moved_to_B_cm": round(float(np.linalg.norm(t)) * 100.0, 2),
+                    "roll_to_palm_facing_deg": round(th0, 1), "roll_out_deg": round(chosen[0] - th0, 1), "least_depth_cm": round(chosen[1], 2),
+                    "roll_tried": tried, "note": note, "reading": rd}
+
     def hold_gate(self, side, kind, rules, fix=True):
         """Every hold measured before it is used: each digit the hold uses touches its part (tip gap), no digit inside
         the mesh from any side, no finger twisted out of its plane, the thumb on the gun, the wrist and elbow inside
@@ -751,6 +988,14 @@ class FakePose:
             except Exception as e_:
                 lim["wrist_bones_deg"] = repr(e_)[:60]
             fails = []
+            ib = None
+            if (side, getattr(self, "_gate_mark", None)) in getattr(self, "_b_holds", set()):
+                # the index on line B is judged with the hold (the owner, 2026-10-23: a hard rule, never traded)
+                try:
+                    ib = self.index_b_reading(side)
+                    fails += ib["fails"]
+                except Exception as e_:
+                    ib = {"error": repr(e_)[:120]}
             for d in used:
                 if not g[d]["touch"]:
                     fails.append("%s not touching (tip %.2f cm off)" % (d, g[d]["tip_gap_cm"]))
@@ -764,7 +1009,7 @@ class FakePose:
                 fails.append("elbow %.1f" % lim["elbow_bend_deg"])
             if lim.get("elbow_under_cm", 99.0) < self.ELBOW_UNDER_CM - 0.05:
                 fails.append("elbow %.1f cm under the shoulder" % lim["elbow_under_cm"])
-            return {"digits": g, "used": used, "in_gun": ing, "twist": tw, "limits": lim, "fails": fails, "pass": not fails}
+            return {"digits": g, "used": used, "in_gun": ing, "twist": tw, "limits": lim, "fails": fails, "pass": not fails, "index_on_b": ib}
         before = measure()
         fixed = []
         if fix and not before["pass"]:
@@ -775,8 +1020,10 @@ class FakePose:
                 if mv_ > 0.0:
                     L._put_hand(side, Matrix.LocRotScale(H1.translation, H1.to_quaternion(), L._unit()))
                     fixed.append({"reached_cm": mv_, "index_gap_cm": gap_})
-            if kind != "pinch" and any(not before["digits"][d]["touch"] for d in used if d != "thumb"):
+            on_b = (side, getattr(self, "_gate_mark", None)) in getattr(self, "_b_holds", set())
+            if kind != "pinch" and not on_b and any(not before["digits"][d]["touch"] for d in used if d != "thumb"):
                 # the whole hand sits off the part: moved in along the palm's facing until the palm's skin touches
+                # (not a hand placed by line B: its place is the index's, only its digits are mended, 2026-10-28)
                 H0 = Matrix(L._bw(L._n("hand", side)))
                 n_ = Vector(self.palm_normal_for(side, H0).tolist())
                 mv_ = 0.0
@@ -1701,6 +1948,22 @@ class FakePose:
             dv = (F * float(sh.get("forward", 0.0)) + U * float(sh.get("up", 0.0)) + Lf * float(sh.get("left", 0.0))) / 100.0
             H = Matrix.Translation(Vector(dv.tolist())) @ H
             src += "; tuned for %s: shifted %s cm" % (self.facts["name"], sh)
+        on_b = (tune.get("place") == "index_on_line_b")
+        placed_b = None
+        if on_b:
+            # the owner, 2026-10-28: "thumb grab stay on, index finger stay on middle of trigger ring": the hand placed
+            # by line B (measured first, measure_line_b); the slide, the turn on the palm and the push-out below would
+            # move the index off B, so they are not run for this hold, and the hand is never turned on its palm again
+            if not getattr(self, "line_b", {}).get(side):
+                self.measure_line_b(side)
+            if not hasattr(self, "_b_holds"):
+                self._b_holds = set()
+            self._b_holds.add((side, mark))
+            self.TURN_MAX = 0.0
+            _key0, _p0 = self.preset(side, mark, kind)
+            _into = self.hand_axes(dict(_p0 or {}, **{k: tune[k] for k in ("palm_into", "fingers_toward") if k in tune}))[0]
+            H, placed_b = self.place_index_on_b(side, H, _into)
+            src += "; placed by line B (the index's pad line on it, its middle at the ring's middle)"
         cap_ = self.presets.get("captured", {}).get("%s:%s" % (side, mark))
         if fingers and cap_ is not None and cap_.get("fingers_fit") is False:
             # the capture came from another gun: its hand placement is kept, its finger turns are not (they fit that
@@ -1712,7 +1975,7 @@ class FakePose:
             bpy.context.view_layer.update()
         turned, slid, reached = 0.0, 0.0, None
         curls = {}
-        if getattr(L, "_put_hand_unlimited", None) is not None:
+        if getattr(L, "_put_hand_unlimited", None) is not None and not on_b:
             H, slid = self.slide_within_reach(side, mark, H)
             H, turned, _w = self.turn_hand_within(side, H)
         _cap = self.presets.get("captured", {}).get("%s:%s" % (side, mark)) or {}
@@ -1752,15 +2015,18 @@ class FakePose:
                 curls["thumb_base"] = self.set_thumb_base(side, float(thumb_base.get("spread_deg", 30.0)), float(thumb_base.get("palmar_deg", 20.0)))
             for dg, degs in start_curl.items():
                 self.set_curl(side, dg, degs)
-        if _cap.get("reach_mark") or _pre.get("reach_mark"):
+        if (_cap.get("reach_mark") or _pre.get("reach_mark")) and not on_b:
             H, _mv, _gap = self.reach_mark(side, mark, H)
             reached = {"moved_cm": _mv, "pad_gap_cm": _gap}
         short = L._put_hand(side, H)
         key, p = self.preset(side, mark, kind)
         pushed = None
-        if p and p.get("push_out"):
+        if p and p.get("push_out") and not on_b:
             into_ = np.asarray(self.hand_axes(p)[0]) if "palm_into" in p else -np.asarray(self.gun_axes()[2]) * (1.0 if side == "l" else -1.0)
             pushed = self.push_out(side, into_)
+        if on_b:
+            curls["index_on_b_placed"] = placed_b
+            curls["index_on_b_after_put"] = self.index_b_reading(side)
         rules = (p or {}).get("fingers") or self.presets.get("captured_fingers", {}).get("%s:%s" % (side, mark), {})
         if tune.get("fingers"):
             rules = dict(rules, **tune["fingers"])
@@ -1819,6 +2085,8 @@ class FakePose:
         _sh = (np.array(list(L._bw(L._n("upperarm", side)).translation)) - np.array(list(L.eye))) * 100.0
         self._gate_mark = mark
         gate = self.hold_gate(side, kind, rules)
+        if on_b:
+            curls["index_on_b_after_gate"] = self.index_b_reading(side)
         out = {"preset": src, "arm_short_cm": round(short, 2), "curls": curls, "pushed_out_cm": pushed, "hold_mend": hold_mend,
                "reached": reached, "in_gun": in_gun, "gate": gate,
                "hand_view_cm": [round(float(_d @ _VR), 1), round(float(_d @ _VF), 1), round(float(_d @ _VU), 1)],
