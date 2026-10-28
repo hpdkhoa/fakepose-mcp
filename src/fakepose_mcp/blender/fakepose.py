@@ -1046,6 +1046,98 @@ class FakePose:
         return {"swing_deg": round(turned, 1), "tip_past_middle_plane_cm": round(across, 2) if across is not None else None,
                 "gap_cm": round(gap, 2) if gap is not None else None}
 
+    def place_web_a_thumb_arrow(self, side, H, into, arrow):
+        """The owner's hold (2026-10-28, drawn on the left view): the web fold on A, the palm facing into the grip's
+        right side as the preset says (no roll), the hand turned about its palm's normal so the straight index aims at
+        the middle of line B (the trigger), the thumb laid down the left face along the arrow (forward and down)."""
+        L = self.L
+        PH = getattr(L, "_put_hand_unlimited", None) or L._put_hand
+        L.natural_open(side, index_extended=False)
+        self._pose_abs(side, "index", [0.0, 0.0, 0.0])
+        bpy.context.view_layer.update()
+        PH(side, H)
+        bpy.context.view_layer.update()
+        A, nA = self.point_a_world(side)
+        At = A + nA * (self.glove / 100.0)
+        lb = self.line_b_world(side)
+        W = np.array(list(L._anchor(side, "web_fold")))
+        H1 = Matrix.Translation(Vector(list(At - W))) @ Matrix(H)
+        PH(side, H1)
+        bpy.context.view_layer.update()
+        # the palm onto the grip's right face: rolled about the bore's line through the web (the web stays on A) by the
+        # least angle that brings the palm's skin out of the stock toward the gun's right (a hand wraps over the top
+        # of the wrist; without this the palm hangs through the stock's middle, run arrow 2026-10-28)
+        F_, U_, Lf_ = self.gun_axes()
+        _b, _T, sidev, kind, segi = L._skin_static()
+        sc = 1 if side == "r" else 2
+        psel = np.nonzero((sidev == sc) & (kind == 2))[0][::2]
+        pv = Vector(list(At))
+        roll_out, roll_depth = 0.0, None
+        pc0 = np.array(list(L._bw(L._n("finger", side, "middle", "01")).translation))
+        for sg in (1.0, -1.0):
+            Hs = Matrix.Translation(pv) @ Matrix.Rotation(math.radians(sg * 5.0), 4, Vector(list(F_))) @ Matrix.Translation(-pv) @ H1
+            PH(side, Hs)
+            bpy.context.view_layer.update()
+            pc = np.array(list(L._bw(L._n("finger", side, "middle", "01")).translation))
+            if float((pc - pc0) @ -Lf_) > 0.0:
+                sgn_ = sg
+                break
+        PH(side, H1)
+        bpy.context.view_layer.update()
+        for k in range(0, 37):
+            th_ = sgn_ * k * 2.5
+            Hs = Matrix.Translation(pv) @ Matrix.Rotation(math.radians(th_), 4, Vector(list(F_))) @ Matrix.Translation(-pv) @ H1
+            PH(side, Hs)
+            bpy.context.view_layer.update()
+            dp = float(np.min(self.gun_signed(L._skin_arrays()[0][psel])))
+            roll_out, roll_depth = th_, dp
+            if dp >= 0.0:
+                break
+        H1 = Hs
+        # about the palm's normal through the web: the index's line aimed at line B's middle
+        n = unit(np.array(list(L._palm_facing(side))))
+        d = unit(np.array(L.index_pad_line(side)["dir"]))
+        want = unit(lb["mid"] - At)
+        dp, wp = unit(d - n * float(d @ n)), unit(want - n * float(want @ n))
+        th = math.degrees(math.atan2(float(np.cross(dp, wp) @ n), float(dp @ wp)))
+        pv = Vector(list(At))
+        H2 = Matrix.Translation(pv) @ Matrix.Rotation(math.radians(th), 4, Vector(list(n))) @ Matrix.Translation(-pv) @ H1
+        PH(side, H2)
+        bpy.context.view_layer.update()
+        # the index knuckle: the straight finger aimed at B's middle
+        best = None
+        for a in np.arange(-15.0, 90.0 + 1e-9, 2.5):
+            self._pose_abs(side, "index", [float(a), 0.0, 0.0])
+            bpy.context.view_layer.update()
+            Li = L.index_pad_line(side)
+            c = float(unit(np.array(Li["dir"])) @ unit(lb["mid"] - np.array(Li["pads"][min(Li["pads"])])))
+            if best is None or c > best[0]:
+                best = (c, float(a))
+        self._pose_abs(side, "index", [best[1], 0.0, 0.0])
+        bpy.context.view_layer.update()
+        # the thumb along the arrow: straight, its base turned so it points the arrow's way (gun axes); the hold's rule
+        # then swings it onto the gun and closes it
+        F, U, Lf = self.gun_axes()
+        dt = unit(F * float(arrow.get("forward", 0.0)) + U * float(arrow.get("up", 0.0)) + Lf * float(arrow.get("left", 0.0)))
+        tn = L._n("finger", side, "thumb", "01")
+        self._pose_abs(side, "thumb", [0.0, 0.0, 0.0])
+        bpy.context.view_layer.update()
+        base = L._bw(tn).translation.copy()
+        tip = Vector(list(L._anchor(side, "thumb_tip")))
+        q = (tip - base).normalized().rotation_difference(Vector(list(dt)))
+        ax, ang = q.axis, math.degrees(q.angle)
+        if ax.length > 1e-6:
+            L._turn_about(tn, ax.normalized(), ang, base)
+        bpy.context.view_layer.update()
+        tip2 = np.array(list(L._anchor(side, "thumb_tip")))
+        rd = self.index_b_reading(side)
+        return H2, {"web_moved_to_A_cm": round(float(np.linalg.norm(At - W)) * 100.0, 2), "palm_rolled_onto_right_face_deg": round(roll_out, 1),
+                    "palm_least_depth_after_roll_cm": round(roll_depth, 2) if roll_depth is not None else None, "turned_about_palm_deg": round(th, 1),
+                    "index_knuckle_deg": best[1], "index_aim_cos": round(best[0], 4), "thumb_turned_deg": round(ang, 1),
+                    "thumb_dir_to_arrow_deg": round(math.degrees(math.acos(min(1.0, max(-1.0, float(unit(tip2 - np.array(list(base))) @ dt))))), 1),
+                    "thumb_tip_left_of_middle_cm": round(float((tip2 - self.to_world((0.0, 0.0, 0.0))) @ Lf) * 100.0, 2),
+                    "reading": rd, "web": self.web_a_reading(side)}
+
     def line_b_world(self, side):
         lb = self.line_b[side]
         Rw = self.gk["bone_world"]("Root")
@@ -1081,7 +1173,7 @@ class FakePose:
         if mode == "index_on_line_b" and abs(along) > self.LINE_B_ALONG_CM:
             fails.append("index middle %.2f cm from the ring's middle along the bore" % along)
         web = None
-        if mode == "web_a_index_b" and getattr(self, "point_a", {}).get(side):
+        if mode in ("web_a_index_b", "fingers") and getattr(self, "point_a", {}).get(side):
             web = self.web_a_reading(side)
             if web["web_to_A_cm"] > self.WEB_A_CM:
                 fails.append("web fold %.2f cm off point A" % web["web_to_A_cm"])
@@ -2167,7 +2259,7 @@ class FakePose:
             dv = (F * float(sh.get("forward", 0.0)) + U * float(sh.get("up", 0.0)) + Lf * float(sh.get("left", 0.0))) / 100.0
             H = Matrix.Translation(Vector(dv.tolist())) @ H
             src += "; tuned for %s: shifted %s cm" % (self.facts["name"], sh)
-        on_b = tune.get("place") in ("index_on_line_b", "web_a_index_b")
+        on_b = tune.get("place") in ("index_on_line_b", "web_a_index_b", "web_a_thumb_arrow")
         placed_b = None
         if on_b:
             if not hasattr(self, "_b_mode"):
@@ -2184,7 +2276,13 @@ class FakePose:
             self.TURN_MAX = 0.0
             _key0, _p0 = self.preset(side, mark, kind)
             _into = self.hand_axes(dict(_p0 or {}, **{k: tune[k] for k in ("palm_into", "fingers_toward") if k in tune}))[0]
-            if tune.get("place") == "web_a_index_b":
+            if tune.get("place") == "web_a_thumb_arrow":
+                if not getattr(self, "point_a", {}).get(side):
+                    self.measure_point_a(side)
+                self._b_mode[side] = "fingers"
+                H, placed_b = self.place_web_a_thumb_arrow(side, H, _into, tune.get("thumb_arrow") or {"forward": 2.0, "up": -1.0})
+                src += "; placed by point A (the web fold on it), the index aimed at line B's middle, the thumb down the left face along the arrow"
+            elif tune.get("place") == "web_a_index_b":
                 if not getattr(self, "point_a", {}).get(side):
                     self.measure_point_a(side)
                 H, placed_b = self.place_web_a_index_b(side, H, _into)
