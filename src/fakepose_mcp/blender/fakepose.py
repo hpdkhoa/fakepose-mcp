@@ -1192,7 +1192,8 @@ class FakePose:
         # step, until the tip's skin meets the left face with the tip past the middle plane
         base = L._bw(tn).translation.copy()
         tip = Vector(list(L._anchor(side, "thumb_tip")))
-        q2 = (tip - base).normalized().rotation_difference(Vector(list(Lf - U * 0.15)).normalized())
+        over = float(self.tuning(side, "grip").get("thumb_over_down", 0.15))     # how far down the left the laid thumb points (0.15: along the top)
+        q2 = (tip - base).normalized().rotation_difference(Vector(list(Lf - U * over)).normalized())
         if q2.axis.length > 1e-6:
             L._turn_about(tn, q2.axis.normalized(), math.degrees(q2.angle), base)
         bpy.context.view_layer.update()
@@ -1219,6 +1220,10 @@ class FakePose:
                 bpy.context.view_layer.update()
                 lifted += 2.0
         za = float(A @ U)
+        o0 = self.to_world((0.0, 0.0, 0.0))
+        r2 = np.array(list(L._bw(L._n("finger", side, "thumb", "02")).translation))
+        self._thumb_root_read = {"root_left_of_middle_cm": round(float((r2 - o0) @ Lf) * 100.0, 2), "root_under_A_cm": round((za - float(r2 @ U)) * 100.0, 2),
+                                 "web_to_root_cm": round(float(np.linalg.norm(r2 - np.array(list(L._anchor(side, "web_fold"))))) * 100.0, 2)}
         # the thumb's pad onto the top: rolled about its own line until a small bend moves the tip downward (the flex
         # plane set so the joints fold over the edge, down the left face, not forward or up)
         base = L._bw(tn).translation.copy()
@@ -1253,7 +1258,7 @@ class FakePose:
         tip2 = np.array(list(L._anchor(side, "thumb_tip")))
         rd = self.index_b_reading(side)
         return H2, {"web_moved_to_A_cm": round(float(np.linalg.norm(At - W)) * 100.0, 2), "slid_right_cm": slid_right_cm,
-                    "thumb_laid_across_deg": swung, "thumb_wrap": getattr(self, "_thumb_wrap", None), "turned_about_palm_deg": round(th, 1),
+                    "thumb_laid_across_deg": swung, "thumb_wrap": getattr(self, "_thumb_wrap", None), "thumb_root": getattr(self, "_thumb_root_read", None), "turned_about_palm_deg": round(th, 1),
                     "index_knuckle_deg": best[1], "index_aim_cos": round(best[0], 4), "thumb_turned_deg": round(ang, 1),
                     "thumb_dir_to_arrow_deg": round(math.degrees(math.acos(min(1.0, max(-1.0, float(unit(tip2 - np.array(list(base))) @ dt))))), 1),
                     "thumb_tip_left_of_middle_cm": round(float((tip2 - self.to_world((0.0, 0.0, 0.0))) @ Lf) * 100.0, 2),
