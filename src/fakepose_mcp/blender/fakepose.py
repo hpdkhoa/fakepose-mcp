@@ -1317,6 +1317,26 @@ class FakePose:
         self.report["body_blade"] = out
         return out
 
+    def gun_to_shoulder(self, side="r", target_cm=5.0):
+        """The owner, 2026-10-29: "push the gun forward": the gun moved along the view until the butt's face sits
+        target_cm ahead of the firing shoulder's joint; the eye relief grows by the same amount and is reported."""
+        VF = np.array(list(self.gk["view"][1]))
+        a0 = self.butt_ahead_of_shoulder_cm(side)
+        d = (target_cm - a0) / 100.0
+        D = np.eye(4)
+        D[:3, 3] = VF * d
+        self.gk["move_gun"](Matrix(D.tolist()))
+        self.gun_bvh()
+        s2 = self.sights()
+        eye = np.array(list(self.L.eye))
+        out = {"moved_forward_cm": round(d * 100.0, 2), "butt_ahead_of_shoulder_cm": self.butt_ahead_of_shoulder_cm(side), "before_cm": a0,
+               "eye_to_rear_sight_cm": round(float(np.linalg.norm(s2["rear"] - eye)) * 100.0, 2)}
+        self.report["gun_to_shoulder"] = out
+        if "aim" in self.report:
+            self.report["aim"]["eye_to_rear_sight_cm"] = out["eye_to_rear_sight_cm"]
+            self.report["aim"]["butt_ahead_of_shoulder_joint_cm"] = out["butt_ahead_of_shoulder_cm"]
+        return out
+
     def line_b_world(self, side):
         lb = self.line_b[side]
         Rw = self.gk["bone_world"]("Root")
