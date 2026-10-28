@@ -1276,6 +1276,47 @@ class FakePose:
                     "thumb_tip_left_of_middle_cm": round(float((tip2 - self.to_world((0.0, 0.0, 0.0))) @ Lf) * 100.0, 2),
                     "reading": rd, "web": self.web_a_reading(side)}
 
+    def butt_ahead_of_shoulder_cm(self, side="r"):
+        VF = np.array(list(self.gk["view"][1]))
+        self.gun_bvh()
+        Sh = np.array(list(self.L._bw(self.L._n("upperarm", side)).translation))
+        return round((float(np.min(self._gverts @ VF)) - float(Sh @ VF)) * 100.0, 2)
+
+    def body_blade(self, side="r", target_cm=5.0, step_deg=5.0, max_deg=70.0):
+        """The owner's option 2 (2026-10-29): the eye relief kept, the body moved so the butt locks on the shoulder:
+        the torso turned about its own vertical axis (the bladed stance; the head turned back so it faces the view),
+        step by step, until the butt's face sits target_cm ahead of the firing shoulder's joint. The gun does not move
+        (the eye is the game camera). Returns the turn and the butt's place."""
+        L = self.L
+        sb = L.arm.pose.bones.get("spine_01")
+        if sb is None:
+            return {"error": "no spine_01 bone"}
+        piv = L._bw("spine_01").translation.copy()
+        hp = L.arm.pose.bones.get("head")
+        turned, ahead = 0.0, self.butt_ahead_of_shoulder_cm(side)
+        a0 = ahead
+        # the turn's sign read from a first step: the one that moves the butt ahead of the shoulder
+        L._turn_about("spine_01", Vector((0.0, 0.0, 1.0)), step_deg, piv)
+        bpy.context.view_layer.update()
+        a1 = self.butt_ahead_of_shoulder_cm(side)
+        L._turn_about("spine_01", Vector((0.0, 0.0, 1.0)), -step_deg, piv)
+        bpy.context.view_layer.update()
+        sgn = 1.0 if a1 > a0 else -1.0
+        while ahead < target_cm and turned < max_deg:
+            L._turn_about("spine_01", Vector((0.0, 0.0, 1.0)), sgn * step_deg, piv)
+            if hp is not None:
+                L._turn_about("head", Vector((0.0, 0.0, 1.0)), -sgn * step_deg, L._bw("head").translation.copy())
+            bpy.context.view_layer.update()
+            turned += step_deg
+            ahead = self.butt_ahead_of_shoulder_cm(side)
+        if side in getattr(self, "_clav_rest", {}):
+            del self._clav_rest[side]          # the shoulder-back move counts from the bladed body
+        out = {"turned_deg": round(turned, 1), "butt_ahead_of_shoulder_cm": ahead, "before_cm": a0, "target_cm": target_cm,
+               "reached": bool(ahead >= target_cm), "shoulder_cm": [round(x * 100.0, 2) for x in L._bw(L._n("upperarm", side)).translation],
+               "other_shoulder_cm": [round(x * 100.0, 2) for x in L._bw(L._n("upperarm", "l" if side == "r" else "r")).translation]}
+        self.report["body_blade"] = out
+        return out
+
     def line_b_world(self, side):
         lb = self.line_b[side]
         Rw = self.gk["bone_world"]("Root")
