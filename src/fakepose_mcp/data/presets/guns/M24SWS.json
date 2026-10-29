@@ -10,46 +10,25 @@
     "left": 0.0
    },
    "curl": "together",
-   "palm_into": {
-    "left": 1.0
-   },
-   "fingers_toward": {
-    "up": -1.0,
-    "forward": -0.8
-   },
-   "offset_cm": {
-    "forward": -2.0,
-    "up": 3.0,
-    "left": 0.0
-   },
+   "why": "2026-10-27: the fingers square across the wrist line (forward 0.82, up -0.57) made the wrist 64.6 (from 48.1) and left ring and pinky off: the family's facing kept; the wrist comes from the forearm rising from a low elbow; 2026-10-28, the owner: the hand stays as it sat, only the fingers change: the index along the bore toward line B, the thumb over to the left side; 2026-10-28 later, the owner drew A on the left view (the dip on top of the wrist behind the action) and the thumb's arrow down the left face: the web fold on A, the index aimed at line B's middle, the thumb along the arrow",
    "fingers": {
-    "index": {
-     "rule": "curl_to_contact",
-     "target_deg": "fist",
-     "other_hand": false
-    },
-    "middle": {
-     "rule": "curl_to_contact",
-     "target_deg": "fist",
-     "other_hand": false
-    },
-    "ring": {
-     "rule": "curl_to_contact",
-     "target_deg": "fist",
-     "other_hand": false
-    },
-    "pinky": {
-     "rule": "curl_to_contact",
-     "target_deg": "fist",
-     "other_hand": false
-    },
     "thumb": {
      "rule": "curl_to_contact",
      "target_deg": "fist",
      "other_hand": false
     }
    },
-   "why": "2026-10-29, the owner: 'do it the standard game market way': the engine's own preset hold on the M24's vertical grip: the palm on the right face, the fingers pointing down the grip's line and wrapping it, every digit closed to contact; no touch points, the gate reported only"
+   "place": "web_a_thumb_arrow",
+   "thumb_arrow": {
+    "forward": 2.0,
+    "up": -1.0
+   },
+   "point_a": {
+    "behind_ring_cm": 6.2,
+    "source": "the owner's mark on the left view, 2026-10-28: the top of the wrist right behind the action",
+    "right_of_centre_cm": 1.0
+   },
+   "thumb_over_down": 0.7
   },
   "l:support": {
    "shift_cm": {

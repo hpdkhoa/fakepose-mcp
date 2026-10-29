@@ -1254,43 +1254,18 @@ class FakePose:
         roll = math.degrees(math.atan2(float(np.cross(dp_, wn) @ ta), float(dp_ @ wn)))
         L._turn_about(tn, tax, roll, base)
         bpy.context.view_layer.update()
-        # free style (the owner, 2026-10-29: "make the hand free style your way"): the thumb by a search over its
-        # base (turned about the bore's line and about the hand's forward line) and its two joints; kept: the pose
-        # with no segment inside past 0.3 cm whose tip touches the left face below the top edge, the farthest left;
-        # else the outside pose with the tip nearest the face; else the least inside. Measured, not guessed.
-        Fax = Vector(list(F))
-        M0 = L._bw(tn).copy()
-        best_t, tried_n = None, 0
-        for a1 in range(-40, 41, 10):
-            for a2 in range(-40, 41, 10):
-                L._set_world(tn, M0)
-                L._turn_about(tn, Fax, float(a1), base)
-                L._turn_about(tn, axis_, float(a2), base)
-                for b2 in (0.0, 20.0, 40.0, 60.0, 80.0):
-                    L._set_thumb_bend(side, b2, b2, TL_)
-                    bpy.context.view_layer.update()
-                    gg = [float(x) for x in self._gaps(side, "thumb", None)]
-                    tipw = np.array(list(L._anchor(side, "thumb_tip")))
-                    tx = float((tipw - o0) @ Lf) * 100.0
-                    tz = (float(tipw @ U) - za) * 100.0
-                    tried_n += 1
-                    # the gate's own inside threshold on the two wrapping segments; the base segment's skin runs into
-                    # the web on the top and reads up to 1 cm in there (measured -0.43 at every pose, run free3)
-                    out_ = min(gg[1], gg[2]) >= -(self.glove + 0.3) and gg[0] >= -1.0
-                    touch = gg[2] <= self.glove + 0.3
-                    key = (0 if (out_ and touch and tx > 0.0 and tz < -0.5) else 1 if out_ else 2,
-                           -tx if (out_ and touch and tx > 0.0 and tz < -0.5) else (abs(gg[2]) if out_ else -min(gg)))
-                    if best_t is None or key < best_t[0]:
-                        best_t = (key, a1, a2, b2, gg, tx, tz)
-        _k, a1, a2, b2, gg, tx, tz = best_t
-        L._set_world(tn, M0)
-        L._turn_about(tn, Fax, float(a1), base)
-        L._turn_about(tn, axis_, float(a2), base)
-        L._set_thumb_bend(side, b2, b2, TL_)
-        bpy.context.view_layer.update()
-        wrap = {"search": "free style grid, %d poses" % tried_n, "base_about_bore_deg": a1, "base_about_hand_deg": a2, "bend_deg": b2,
-                "gaps_cm": [round(x, 2) for x in gg], "tip_left_of_middle_cm": round(tx, 2), "tip_under_A_cm": round(-tz, 2),
-                "class": ["touching the left face below the top", "outside, not touching", "inside"][_k[0]]}
+        wrap = None
+        for b2 in np.arange(0.0, 90.0 + 1e-9, 5.0):
+            L._set_thumb_bend(side, float(b2), float(b2), TL_)
+            bpy.context.view_layer.update()
+            gg = self._gaps(side, "thumb", None)
+            tipw = np.array(list(L._anchor(side, "thumb_tip")))
+            tx = float((tipw - o0) @ Lf) * 100.0
+            tz = (float(tipw @ U) - za) * 100.0
+            wrap = {"base_lifted_deg": lifted, "bend_02_deg": float(b2), "bend_03_deg": float(b2), "gaps_cm": [round(float(x), 2) for x in gg],
+                    "tip_left_of_middle_cm": round(tx, 2), "tip_under_A_cm": round(-tz, 2)}
+            if float(gg[2]) <= self.glove and tx > 0.0 and tz < -0.5:
+                break
         self._thumb_wrap = wrap
         tip2 = np.array(list(L._anchor(side, "thumb_tip")))
         rd = self.index_b_reading(side)
@@ -2497,8 +2472,7 @@ class FakePose:
             if not hasattr(self, "_b_holds"):
                 self._b_holds = set()
             self._b_holds.add((side, mark))
-            if not tune.get("free_cant"):
-                self.TURN_MAX = 0.0
+            self.TURN_MAX = 0.0
             _key0, _p0 = self.preset(side, mark, kind)
             _into = self.hand_axes(dict(_p0 or {}, **{k: tune[k] for k in ("palm_into", "fingers_toward") if k in tune}))[0]
             if tune.get("place") == "web_a_thumb_arrow":
