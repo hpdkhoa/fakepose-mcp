@@ -151,3 +151,9 @@ and place along the bore); (5) the gate's thumb "opened_first" and a later step 
 **Rules learned this thread:** never move the hand to fix a finger (A is a wall); the palm faces the grip, no roll
 search; the thumb reaches the left by its own joints; A moved only where the owner marks it; verify + report with
 numbers before building; least verbose; markers on every picture; left and right close views on every round.
+
+## 2026-10-29 later: the hold as one solve (the owner: "build that two points")
+fakepose `solve_parts`, `contact_readings`, `solve_hold`; overlay r:grip place "solve", A 7.1/1.0, solve_turn_max_deg
+180, solve_grid_deg 15; a solved hold is gated with fix off. Run solve3 (412 s): walls held (wrist 13.3), web, thumb
+pass; index 2.18 and palm 0.72 miss; the hand wraps upside down. Open: the owner to define the wrap's way (fingers
+under, thumb over the top) as a contact or a wall. The market preset is in git at 6cb1ac4.

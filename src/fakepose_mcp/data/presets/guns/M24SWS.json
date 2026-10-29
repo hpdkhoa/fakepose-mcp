@@ -49,7 +49,15 @@
      "other_hand": false
     }
    },
-   "why": "2026-10-29, the owner: 'do it the standard game market way': the engine's own preset hold on the M24's vertical grip: the palm on the right face, the fingers pointing down the grip's line and wrapping it, every digit closed to contact; no touch points, the gate reported only"
+   "why": "2026-10-29, the owner: 'do it the standard game market way': the engine's own preset hold on the M24's vertical grip: the palm on the right face, the fingers pointing down the grip's line and wrapping it, every digit closed to contact; no touch points, the gate reported only; 2026-10-29 the owner: \"build that two points\": the hold solved as one (solve_hold): contacts against named parts, walls hard",
+   "place": "solve",
+   "point_a": {
+    "behind_ring_cm": 7.1,
+    "right_of_centre_cm": 1.0,
+    "source": "the owner's mark on the left view, 2026-10-28; 2026-10-29 slid back half the distance (7.1); right of the centre line (the owner, 2026-10-28)"
+   },
+   "solve_turn_max_deg": 180.0,
+   "solve_grid_deg": 15.0
   },
   "l:support": {
    "shift_cm": {
