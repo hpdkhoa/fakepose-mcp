@@ -1254,18 +1254,45 @@ class FakePose:
         roll = math.degrees(math.atan2(float(np.cross(dp_, wn) @ ta), float(dp_ @ wn)))
         L._turn_about(tn, tax, roll, base)
         bpy.context.view_layer.update()
-        wrap = None
+        # the gate's rule inside the placement (the owner, 2026-10-29: "get the gate in there and don't let the
+        # placement skip it"): no thumb segment inside the gun past 0.3 cm at any accepted bend; a thumb that starts
+        # inside is lifted at its base (about the hand's forward line, away from the gun) until it is out, then bent
+        wrap, wbest = None, None
+        lift_sign = 1.0
+        g_now = min(float(x) for x in self._gaps(side, "thumb", None))
+        if g_now < -0.3:
+            L._turn_about(tn, axis_, 2.0, base)
+            bpy.context.view_layer.update()
+            lift_sign = 1.0 if min(float(x) for x in self._gaps(side, "thumb", None)) > g_now else -1.0
+            if lift_sign < 0:
+                L._turn_about(tn, axis_, -4.0, base)
+                bpy.context.view_layer.update()
+            lifted += 2.0
+            for _ in range(20):
+                if min(float(x) for x in self._gaps(side, "thumb", None)) >= -0.3:
+                    break
+                L._turn_about(tn, axis_, lift_sign * 2.0, base)
+                bpy.context.view_layer.update()
+                lifted += 2.0
         for b2 in np.arange(0.0, 90.0 + 1e-9, 5.0):
             L._set_thumb_bend(side, float(b2), float(b2), TL_)
             bpy.context.view_layer.update()
-            gg = self._gaps(side, "thumb", None)
+            gg = [float(x) for x in self._gaps(side, "thumb", None)]
             tipw = np.array(list(L._anchor(side, "thumb_tip")))
             tx = float((tipw - o0) @ Lf) * 100.0
             tz = (float(tipw @ U) - za) * 100.0
-            wrap = {"base_lifted_deg": lifted, "bend_02_deg": float(b2), "bend_03_deg": float(b2), "gaps_cm": [round(float(x), 2) for x in gg],
-                    "tip_left_of_middle_cm": round(tx, 2), "tip_under_A_cm": round(-tz, 2)}
-            if float(gg[2]) <= self.glove and tx > 0.0 and tz < -0.5:
+            cand = {"base_lifted_deg": lifted, "bend_02_deg": float(b2), "bend_03_deg": float(b2), "gaps_cm": [round(x, 2) for x in gg],
+                    "tip_left_of_middle_cm": round(tx, 2), "tip_under_A_cm": round(-tz, 2), "inside": bool(min(gg) < -0.3)}
+            if min(gg) < -0.3:
+                break                        # bending further only goes deeper: the last outside bend is kept
+            wbest = cand
+            if gg[2] <= self.glove + 0.3 and tx > 0.0 and tz < -0.5:
+                wrap = cand
                 break
+        if wrap is None and wbest is not None:
+            L._set_thumb_bend(side, wbest["bend_02_deg"], wbest["bend_03_deg"], TL_)
+            bpy.context.view_layer.update()
+            wrap = dict(wbest, note="the next bend went inside or none reached the face: the last outside bend kept")
         self._thumb_wrap = wrap
         tip2 = np.array(list(L._anchor(side, "thumb_tip")))
         rd = self.index_b_reading(side)
