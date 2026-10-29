@@ -10,7 +10,6 @@ Gun Kit hands it its own helpers (the facts, the gun frame, the marks' places, m
 import json
 import math
 import os
-import time
 
 import bpy
 import numpy as np
@@ -710,8 +709,6 @@ class FakePose:
         kind = kind or hr.get("kind", "palm")
         rules = hr.get("rules") or (self.preset(side, mark, kind)[1] or {}).get("fingers") or {}
         self._gate_mark = mark
-        if (side, mark) in getattr(self, "_solved_holds", set()):
-            fix = False              # a solved hold is measured, never mended after the solve
         gate = self.hold_gate(side, kind, rules, fix=fix)
         self.report.setdefault("holds", {}).setdefault("%s:%s:%s" % (side, mark, kind), {})["gate_" + tag] = gate
         return gate
@@ -1365,363 +1362,6 @@ class FakePose:
             self.report["aim"]["butt_ahead_of_shoulder_joint_cm"] = out["butt_ahead_of_shoulder_cm"]
         return out
 
-    # --- the hold as one solve (the owner, 2026-10-29: "build that two points") -----------------------------------
-    # (1) every contact defined against a named part: the index pad on the trigger blade through the ring, the thumb pad
-    # on the grip's far face, the palm on the grip's near face, the web fold on A. (2) one solver over the hand's turn
-    # (the web held on A), every finger joint and the elbow, the walls as hard limits, scored by the distance (cm) from
-    # each contact to its part. A pose outside a wall is never the answer: the search first reaches a pose inside every
-    # wall, then lowers the distances; one that cannot is reported as FAIL with its numbers.
-    SOLVE_FACE_COS = 0.6         # a face of the grip: its normal within 53 deg of the side's way (mine, told)
-    SOLVE_PALM_SHARE = 0.25      # the palm on its face: a quarter of the palm's skin within the touch band (mine, told)
-    SOLVE_MAX_S = 900.0
-
-    def _part_bvh(self, keep, bones=()):
-        """The gun's triangles that keep(centre, normal, in_bones) accepts, as a BVH, world, as posed now; with the
-        count kept. in_bones: the triangle belongs to the parts the named bones move (the trigger)."""
-        L = self.L
-        obs = [o for o in bpy.context.scene.objects if o.type == "MESH" and o not in L.meshes and not o.hide_viewport
-               and o.vertex_groups.get("hand_r") is None]
-        dg = bpy.context.evaluated_depsgraph_get()
-        verts, tris = [], []
-        for o in obs:
-            gi = {g_.index for g_ in o.vertex_groups if g_.name in bones}
-            ev = o.evaluated_get(dg)
-            me = ev.to_mesh()
-            M = ev.matrix_world
-            base = len(verts)
-            V = [np.array(list(M @ v.co)) for v in me.vertices]
-            verts.extend([tuple(v) for v in V])
-            mem = set()
-            if gi and len(o.data.vertices) == len(me.vertices):
-                mem = {v.index for v in o.data.vertices if any(g_.group in gi and g_.weight > 0.5 for g_ in v.groups)}
-            me.calc_loop_triangles()
-            for t in me.loop_triangles:
-                a, b, c = (V[i] for i in t.vertices)
-                n = np.cross(b - a, c - a)
-                ln = float(np.linalg.norm(n))
-                if ln < 1e-12:
-                    continue
-                if keep((a + b + c) / 3.0, n / ln, all(i in mem for i in t.vertices)):
-                    tris.append(tuple(base + i for i in t.vertices))
-            ev.to_mesh_clear()
-        return (BVHTree.FromPolygons(verts, tris) if tris else None), len(tris)
-
-    def solve_parts(self, side):
-        """The named parts the contacts are measured against, measured on the gun as it sits (touch points first):
-        the trigger (its own triangles), the grip's near face (the firing side's, the palm's) and far face (the
-        thumb's), each the triangles facing that side inside the grip's box round the ring and A. Checked: each part
-        has triangles; the ring's opening is measured (line B's)."""
-        if not getattr(self, "line_b", {}).get(side):
-            self.measure_line_b(side)
-        if not getattr(self, "point_a", {}).get(side):
-            self.measure_point_a(side)
-        F, U, Lf = self.gun_axes()
-        lb = self.line_b_world(side)
-        ring = lb["ring"]
-        A, nA = self.point_a_world(side)
-        near = -Lf if side == "r" else Lf
-        a_cm = float((A - ring) @ F) * 100.0
-        top_cm = float((A - ring) @ U) * 100.0
-        box = {"along_cm": [round(a_cm - 8.0, 2), 1.0], "up_cm": [-12.0, round(top_cm + 1.0, 2)]}
-
-        def inbox(c):
-            a_ = float((c - ring) @ F) * 100.0
-            u_ = float((c - ring) @ U) * 100.0
-            return box["along_cm"][0] <= a_ <= box["along_cm"][1] and box["up_cm"][0] <= u_ <= box["up_cm"][1]
-        tb = [p_.get("bone") for n_, p_ in (self.facts.get("parts") or {}).items() if n_ == "trigger" and p_.get("bone")] + ["Trigger", "trigger"]
-        trig, nt = self._part_bvh(lambda c, n, t: t, tb)
-        nearf, nn = self._part_bvh(lambda c, n, t: (not t) and float(n @ near) >= self.SOLVE_FACE_COS and inbox(c), tb)
-        farf, nf = self._part_bvh(lambda c, n, t: (not t) and float(n @ -near) >= self.SOLVE_FACE_COS and inbox(c), tb)
-        rb = self.report.get("line_b", {}).get(side) or {}
-        At = A + nA * (self.glove / 100.0)
-        parts = {"trigger": trig, "near_face": nearf, "far_face": farf, "ring": ring, "F": F, "U": U, "near": near,
-                 "ring_half_cm": [float(rb.get("ring_length_cm", 3.8)) / 2.0, float(rb.get("ring_height_cm", 1.8)) / 2.0], "At": At}
-        if not hasattr(self, "_parts"):
-            self._parts = {}
-        self._parts[side] = parts
-        chk = {"trigger_tris": nt, "near_face_tris": nn, "far_face_tris": nf, "grip_box_from_ring_centre": box,
-               "ring_opening_cm": [round(2 * x, 2) for x in parts["ring_half_cm"]], "A_from_ring_cm": [round(a_cm, 2), round(top_cm, 2)]}
-        chk["ok"] = bool(nt and nn and nf)
-        out = {"definitions": {"index": "the index's end pad (skin labelled index3_pad) to the trigger's own triangles, its nearest point inside the ring's opening",
-                               "thumb": "the thumb's end pad (thumb3_pad) to the grip's far face (triangles facing away from the firing side, cos >= %.1f, in the grip box)" % self.SOLVE_FACE_COS,
-                               "palm": "the palm's skin (label palm) to the grip's near face: %.0f%% of it within the touch band" % (100 * self.SOLVE_PALM_SHARE),
-                               "web": "the web fold on A (held exactly: the hand turns about it)"},
-               "check": chk}
-        self.report.setdefault("solve_parts", {})[side] = out
-        return out
-
-    def contact_readings(self, side, which=("index", "thumb", "palm", "web")):
-        """Each named contact's distance to its own part, cm, as posed now, and its miss beyond the touch band (the
-        gate's: glove + GATE_TOUCH_CM)."""
-        L = self.L
-        P = self._parts[side]
-        touch = self.glove + self.GATE_TOUCH_CM
-
-        def nearest(bvh, X):
-            best = (99.0, None)
-            for x in X:
-                loc, _n, _i, d = bvh.find_nearest(Vector(list(x)))
-                if loc is not None and d * 100.0 < best[0]:
-                    best = (d * 100.0, np.array(list(loc)))
-            return best
-        out = {}
-        if "index" in which:
-            d, q = nearest(P["trigger"], L._skin_part(side, ["index3_pad"]))
-            ro = 99.0
-            if q is not None:
-                a_ = abs(float((q - P["ring"]) @ P["F"])) * 100.0 - P["ring_half_cm"][0]
-                u_ = abs(float((q - P["ring"]) @ P["U"])) * 100.0 - P["ring_half_cm"][1]
-                ro = math.hypot(max(0.0, a_), max(0.0, u_))
-            out["index"] = {"to_trigger_cm": round(d, 2), "outside_ring_cm": round(ro, 2), "miss": max(0.0, d - touch) + ro}
-        if "thumb" in which:
-            d, _q = nearest(P["far_face"], L._skin_part(side, ["thumb3_pad"]))
-            out["thumb"] = {"to_far_face_cm": round(d, 2), "miss": max(0.0, d - touch)}
-        if "palm" in which:
-            X = L._skin_part(side, ["palm"])
-            ds = sorted(P["near_face"].find_nearest(Vector(list(x)))[3] * 100.0 for x in X) if len(X) else [99.0]
-            dq = float(ds[min(len(ds) - 1, int(len(ds) * self.SOLVE_PALM_SHARE))])
-            out["palm"] = {"to_near_face_cm": round(dq, 2), "miss": max(0.0, dq - touch)}
-        if "web" in which:
-            d = float(np.linalg.norm(np.array(list(L._anchor(side, "web_fold"))) - P["At"])) * 100.0
-            out["web"] = {"to_A_cm": round(d, 2), "miss": max(0.0, d - self.WEB_A_CM)}
-        for v in out.values():
-            v["miss"] = round(v["miss"], 2)
-        return out
-
-    def _arm_walls(self, side, M):
-        """The arm's walls for the hand at M, the elbow from best_elbow: each wall's excess (0 inside)."""
-        E, wrist, bend, under = self.best_elbow(side, M)
-        F, U, Lf = self.gun_axes()
-        out_dir = -Lf if side == "r" else Lf
-        side_cm = float((E - self.to_world((0.0, 0.0, 0.0))) @ out_dir) * 100.0
-        L = self.L
-        S = np.array(list(L._bw(L._n("upperarm", side)).translation))
-        E0 = np.array(list(L._bw(L._n("lowerarm", side)).translation))
-        W0 = np.array(list(L._bw(L._n("hand", side)).translation))
-        short = max(0.0, float(np.linalg.norm(np.array(list(M.translation)) - S)) - float(np.linalg.norm(E0 - S)) - float(np.linalg.norm(W0 - E0))) * 100.0
-        ex = {"wrist": max(0.0, wrist - self.WRIST_MAX), "elbow_bend": max(0.0, self.ELBOW_MIN - bend) + max(0.0, bend - self.ELBOW_MAX),
-              "elbow_under": max(0.0, self.ELBOW_UNDER_CM - under), "elbow_out": max(0.0, self.ELBOW_OUT_CM - side_cm), "reach": short}
-        return ex, {"wrist_deg": round(wrist, 1), "elbow_bend_deg": round(bend, 1), "elbow_under_cm": round(under, 1),
-                    "elbow_out_cm": round(side_cm, 1), "reach_short_cm": round(short, 2)}, E
-
-    def _solve_put(self, side, M, E):
-        """The hand set to M, the elbow at E (the walls' place), no turn and no shoulder move."""
-        L = self.L
-        hn = L._n("hand", side)
-        L._two_bone(side, M.translation, pole_world=Vector(E.tolist()))
-        L._set_world(hn, Matrix.LocRotScale(L._bw(hn).translation, M.to_quaternion(), L._unit()))
-        L._roll_forearm(side)
-        bpy.context.view_layer.update()
-
-    @staticmethod
-    def _pattern(f, x0, lo, hi, steps, deadline=None):
-        """A pattern search (each variable stepped up and down, steps halving): f returns a key compared as a tuple
-        (the walls' excess first, then the miss). Returns (x, key, evaluations)."""
-        x = np.clip(np.array(x0, dtype=float), lo, hi)
-        fx = f(x)
-        n_ = 1
-        for s in steps:
-            moved = True
-            while moved:
-                moved = False
-                if deadline is not None and time.time() > deadline:
-                    return x, fx, n_
-                for i in range(len(x)):
-                    for sg in (1.0, -1.0):
-                        y = x.copy()
-                        y[i] = min(hi[i], max(lo[i], y[i] + sg * s))
-                        if y[i] == x[i]:
-                            continue
-                        fy = f(y)
-                        n_ += 1
-                        if fy < fx:
-                            x, fx, moved = y, fy, True
-                            break
-                    if moved:
-                        break
-        return x, fx, n_
-
-    def _finger_key(self, side, digit):
-        """A finger's walls (inside the gun past the gate's line; a joint fault) and its miss, as posed now."""
-        L = self.L
-        g = min(self._gaps(side, digit, None))
-        wall = max(0.0, -self.glove - 0.3 - g)
-        if digit == "thumb":
-            wall += 10.0 * len(L._thumb_report(side, L._thumb_limits())[1])
-        if digit == "index":
-            miss = self.contact_readings(side, ("index",))["index"]["miss"]
-        elif digit == "thumb":
-            miss = self.contact_readings(side, ("thumb",))["thumb"]["miss"]
-        else:
-            miss = max(0.0, g - self.glove - self.GATE_TOUCH_CM)      # the other fingers: on the grip (the gun's surface)
-        return (round(wall, 3), round(miss, 3))
-
-    def _thumb_pose(self, side, q01, x):
-        """The thumb's base turned from its start (q01) about the palm's normal by x[0] and across the hand by x[1],
-        its knuckle and end joint bent to x[2], x[3] (degrees)."""
-        L = self.L
-        n01 = L._n("finger", side, "thumb", "01")
-        L.arm.pose.bones[n01].rotation_quaternion = q01.copy()
-        bpy.context.view_layer.update()
-        across, _k = L._hand_frame(side)
-        pn = L._palm_facing(side)
-        base = L._bw(n01).translation.copy()
-        L._turn_about(n01, pn, float(x[0]), base)
-        L._turn_about(n01, across.normalized(), float(x[1]), base)
-        bpy.context.view_layer.update()
-        self._pose_abs(side, "thumb", [0.0, float(x[2]), float(x[3])])
-
-    def _solve_fingers(self, side, xs, deadline):
-        """Every finger's joints by its own search, the hand as it sits (each finger's walls and miss depend on its own
-        joints only, so the hand's best is the sum of the fingers' bests). xs: the starts, updated."""
-        keys, n_ = {}, 0
-        for d in ("index", "middle", "ring", "pinky"):
-            rg = self._ranges(d)
-            lo, hi = np.array([r[0] for r in rg]), np.array([r[1] for r in rg])
-
-            def f(x, d=d):
-                self._pose_abs(side, d, list(x))
-                return self._finger_key(side, d)
-            x, k, n = self._pattern(f, xs[d], lo, hi, (20.0, 10.0, 5.0, 2.5), deadline)
-            self._pose_abs(side, d, list(x))
-            xs[d], keys[d], n_ = x, k, n_ + n
-        TL = self.L._thumb_limits()
-        lo = np.array([-60.0, -60.0, float(TL["02"][0]), float(TL["03"][0])])
-        hi = np.array([60.0, 60.0, float(TL["02"][1]), float(TL["03"][1])])
-        q01 = self._q01[side]
-
-        def ft(x):
-            self._thumb_pose(side, q01, x)
-            return self._finger_key(side, "thumb")
-        x, k, n = self._pattern(ft, xs["thumb"], lo, hi, (16.0, 8.0, 4.0, 2.0), deadline)
-        self._thumb_pose(side, q01, x)
-        xs["thumb"], keys["thumb"], n_ = x, k, n_ + n
-        return keys, n_
-
-    def _hand_at(self, side, R0, Wl, x):
-        F, U, Lf = self.gun_axes()
-        R = (Matrix.Rotation(math.radians(x[0]), 3, Vector(list(F))) @ Matrix.Rotation(math.radians(x[1]), 3, Vector(list(U)))
-             @ Matrix.Rotation(math.radians(x[2]), 3, Vector(list(Lf))) @ R0)
-        t = Vector(list(self._parts[side]["At"])) - R @ Wl
-        return Matrix.LocRotScale(t, R.to_quaternion(), self.L._unit())
-
-    def _palm_key(self, side):
-        """The hand's own walls (palm, its sides, back and web skin inside the gun) and the palm's miss."""
-        X = self.L._skin_part(side, ["palm", "palm_side", "palm_back", "web"])
-        g = float(np.min(self.gun_signed(X))) if len(X) else 99.0
-        return max(0.0, -self.glove - 0.3 - g), self.contact_readings(side, ("palm",))["palm"]["miss"]
-
-    def solve_hold(self, side, mark, H0, max_turn=45.0, grid=7.5):
-        """The owner's two points as one solve. The hand turns about the web fold held on A (three angles about the
-        gun's forward, up and left from the preset's facing H0, within max_turn); for each turn the elbow is the walls'
-        best (best_elbow) and every finger's joints are searched. Walls (hard): wrist, elbow bend, elbow under the
-        shoulder, elbow outside, reach, no skin inside the gun, finger and thumb joint limits. Score: the sum of the
-        four contacts' misses (cm) plus the other fingers' gaps to the grip. Steps: (a) every turn on a grid against
-        the arm's walls (cheap); none inside: stop, report the least excess; (b) the turns inside ranked by the hand's
-        own walls and the palm's miss; (c) a pattern search from the best over the turn, each step re-solving every
-        finger."""
-        L = self.L
-        t0 = time.time()
-        deadline = t0 + self.SOLVE_MAX_S
-        parts = self.solve_parts(side)
-        rep = {"parts": parts}
-        if not parts["check"]["ok"]:
-            rep["stopped"] = "a named part has no triangles"
-            return H0, rep
-        L.natural_open(side, index_extended=False)
-        bpy.context.view_layer.update()
-        L._put_hand(side, H0)
-        bpy.context.view_layer.update()
-        Hn = L._bw(L._n("hand", side))
-        Rh = Hn.to_3x3().normalized()
-        Wl = Rh.transposed() @ (Vector(list(L._anchor(side, "web_fold"))) - Hn.translation)     # the web in the hand's turn, unscaled
-        R0 = Rh
-        if not hasattr(self, "_q01"):
-            self._q01 = {}
-        self._q01[side] = L.arm.pose.bones[L._n("finger", side, "thumb", "01")].rotation_quaternion.copy()
-        # (a) the arm's walls over the turn grid
-        ang = np.arange(-max_turn, max_turn + 1e-9, grid)
-        inside, least = [], None
-        for a in ang:
-            for b in ang:
-                for c in ang:
-                    x = (float(a), float(b), float(c))
-                    ex, rd, E = self._arm_walls(side, self._hand_at(side, R0, Wl, x))
-                    tot = sum(ex.values())
-                    if tot <= 1e-9:
-                        inside.append((x, rd, E))
-                    elif least is None or tot < least[0]:
-                        least = (tot, x, ex, rd)
-                    if not hasattr(self, "_wrist_scan"):
-                        self._wrist_scan = []
-                    if ex["reach"] <= 0.0 and ex["elbow_under"] <= 0.0 and ex["elbow_bend"] <= 0.0 and ex["elbow_out"] <= 0.0:
-                        self._wrist_scan.append((rd["wrist_deg"], x))
-        rep["arm_grid"] = {"turns": int(len(ang) ** 3), "inside_walls": len(inside), "step_deg": grid, "range_deg": max_turn}
-        if not inside:
-            rep["stopped"] = "no turn of the hand about A keeps the arm inside its walls"
-            rep["least_excess"] = {"turn_deg": least[1], "excess": {k: round(v, 1) for k, v in least[2].items()}, "readings": least[3]}
-            ws = sorted(getattr(self, "_wrist_scan", []))
-            rep["least_wrist_other_walls_held"] = [{"wrist_deg": w_, "turn_deg": x_} for w_, x_ in ws[:5]]
-            if ws:
-                # the hand at the least-wrist turn, for the picture (a FAIL picture: it breaks the wrist wall)
-                Mw = self._hand_at(side, R0, Wl, ws[0][1])
-                _e, _r, Ew = self._arm_walls(side, Mw)
-                self._solve_put(side, Mw, Ew)
-            return H0, rep
-        # (b) the hand's own walls and the palm's miss, every turn inside the arm's walls
-        ranked = []
-        for x, rd, E in inside:
-            self._solve_put(side, self._hand_at(side, R0, Wl, x), E)
-            hw, pm = self._palm_key(side)
-            ranked.append(((round(hw, 3), round(pm, 3)), x))
-        ranked.sort()
-        rep["palm_rank_best"] = [{"turn_deg": x, "hand_inside_cm": k[0], "palm_miss_cm": k[1]} for k, x in ranked[:5]]
-        # (c) the joint search from the best start
-        xs = {d: np.zeros(3) for d in ("index", "middle", "ring", "pinky")}
-        xs["thumb"] = np.zeros(4)
-        evals = {"hand": 0, "fingers": 0}
-        cache = {}
-
-        def full(x):
-            k_ = tuple(round(float(v), 3) for v in x)
-            if k_ in cache:
-                return cache[k_][0]
-            M = self._hand_at(side, R0, Wl, x)
-            ex, rd, E = self._arm_walls(side, M)
-            evals["hand"] += 1
-            if sum(ex.values()) > 1e-9:
-                key = (round(sum(ex.values()), 3) + 1000.0, 0.0)
-                cache[k_] = (key, None)
-                return key
-            self._solve_put(side, M, E)
-            hw, pm = self._palm_key(side)
-            fk, n = self._solve_fingers(side, xs, deadline)
-            evals["fingers"] += n
-            wall = hw + sum(v[0] for v in fk.values())
-            miss = pm + sum(v[1] for v in fk.values())
-            key = (round(wall, 3), round(miss, 3))
-            cache[k_] = (key, {d: xs[d].copy() for d in xs})
-            return key
-        lo, hi = np.full(3, -max_turn), np.full(3, max_turn)
-        x, key, _n = self._pattern(full, ranked[0][1], lo, hi, (6.0, 3.0, 1.5), deadline)
-        # the answer set again as found
-        M = self._hand_at(side, R0, Wl, x)
-        _ex, rd, E = self._arm_walls(side, M)
-        self._solve_put(side, M, E)
-        fx = cache[tuple(round(float(v), 3) for v in x)][1] or xs
-        for d in ("index", "middle", "ring", "pinky"):
-            self._pose_abs(side, d, list(fx[d]))
-        self._thumb_pose(side, self._q01[side], fx["thumb"])
-        if not hasattr(self, "last_limits"):
-            self.last_limits = {}
-        self.last_limits[side] = {"wrist_bend_deg": rd["wrist_deg"], "elbow_bend_deg": rd["elbow_bend_deg"], "elbow_under_cm": rd["elbow_under_cm"],
-                                  "hand_turned_deg": 0.0, "shoulder_back_cm": 0.0}
-        rep.update({"turn_deg": [round(float(v), 2) for v in x], "key_walls_miss": list(key), "arm": rd,
-                    "joints_deg": {d: [round(float(v), 1) for v in fx[d]] for d in fx}, "contacts": self.contact_readings(side),
-                    "fingers_gap_cm": {d: round(min(self._gaps(side, d, None)), 2) for d in DIGITS},
-                    "evals": evals, "seconds": round(time.time() - t0, 1), "hit_time_limit": time.time() > deadline})
-        return M, rep
-
     def line_b_world(self, side):
         lb = self.line_b[side]
         Rw = self.gk["bone_world"]("Root")
@@ -1891,15 +1531,7 @@ class FakePose:
                     fails += ib["fails"]
                 except Exception as e_:
                     ib = {"error": repr(e_)[:120]}
-            cr = None
-            if (side, getattr(self, "_gate_mark", None)) in getattr(self, "_solved_holds", set()):
-                # the named contacts (the owner, 2026-10-29), each against its own part
-                cr = self.contact_readings(side)
-                for k_, v_ in cr.items():
-                    if v_["miss"] > 0.0:
-                        fails.append("%s misses its part by %.2f cm" % (k_, v_["miss"]))
-            used_ = [d for d in used if cr is None or d not in ("index", "thumb")]
-            for d in used_:
+            for d in used:
                 if not g[d]["touch"]:
                     fails.append("%s not touching (tip %.2f cm off)" % (d, g[d]["tip_gap_cm"]))
             if ing["digits"]:
@@ -1912,7 +1544,7 @@ class FakePose:
                 fails.append("elbow %.1f" % lim["elbow_bend_deg"])
             if lim.get("elbow_under_cm", 99.0) < self.ELBOW_UNDER_CM - 0.05:
                 fails.append("elbow %.1f cm under the shoulder" % lim["elbow_under_cm"])
-            return {"digits": g, "used": used, "in_gun": ing, "twist": tw, "limits": lim, "fails": fails, "pass": not fails, "index_on_b": ib, "contacts": cr}
+            return {"digits": g, "used": used, "in_gun": ing, "twist": tw, "limits": lim, "fails": fails, "pass": not fails, "index_on_b": ib}
         before = measure()
         fixed = []
         if fix and not before["pass"]:
@@ -2845,26 +2477,6 @@ class FakePose:
             self.report.setdefault("notes", []).append("natural_open %s: %r" % (side, e_))
         H, fingers, src = self.hand_on(side, mark, kind)
         tune = self.tuning(side, mark)
-        if tune.get("place") == "solve":
-            # the owner, 2026-10-29: "build that two points": the hold as one solve (solve_hold); nothing after it moves
-            # the hand or a finger: the gate measures it as it is
-            Hs, srep = self.solve_hold(side, mark, H, max_turn=float(tune.get("solve_turn_max_deg", 45.0)), grid=float(tune.get("solve_grid_deg", 7.5)))
-            if not hasattr(self, "_solved_holds"):
-                self._solved_holds = set()
-            self._solved_holds.add((side, mark))
-            rules = {d: {"rule": "curl_to_contact", "target_deg": "fist"} for d in DIGITS}
-            if not hasattr(self, "_hold_rules"):
-                self._hold_rules = {}
-            self._hold_rules["%s:%s" % (side, mark)] = {"kind": kind, "rules": rules}
-            self._gate_mark = mark
-            gate = self.hold_gate(side, kind, rules, fix=False)
-            Hn = L._bw(L._n("hand", side)).copy()
-            out = {"preset": src + "; solved (solve_hold)", "solve": srep, "gate": gate, "limits": dict(getattr(self, "last_limits", {}).get(side) or {}),
-                   "arm": {k: v for k, v in L._arm_report(side, L._limits()[0])[0].items()
-                           if k in ("elbow_bend_deg", "wrist_bend_deg", "wrist_flexion_deg", "wrist_radial_deg")}}
-            self.report["holds"]["%s:%s:%s" % (side, mark, kind)] = out
-            fq = {n: L.arm.pose.bones[n].rotation_quaternion.copy() for n in self.gk["finger_bones"][side]}
-            return Hn, fq, out
         if tune.get("shift_cm"):
             F, U, Lf = self.gun_axes()
             sh = tune["shift_cm"]
