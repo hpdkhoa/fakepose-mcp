@@ -1261,17 +1261,21 @@ class FakePose:
         lift_sign = 1.0
         g_now = min(float(x) for x in self._gaps(side, "thumb", None))
         if g_now < -0.3:
-            L._turn_about(tn, axis_, 2.0, base)
+            # the thumb hinged up over the top edge about the bore's line through its base (the owner, 2026-10-29:
+            # "try it"): the sign that raises the tip, 2 deg a step, until no segment is inside, at most 60 deg
+            Fax = Vector(list(F))
+            z0 = float(np.array(list(L._anchor(side, "thumb_tip"))) @ U)
+            L._turn_about(tn, Fax, 2.0, base)
             bpy.context.view_layer.update()
-            lift_sign = 1.0 if min(float(x) for x in self._gaps(side, "thumb", None)) > g_now else -1.0
+            lift_sign = 1.0 if float(np.array(list(L._anchor(side, "thumb_tip"))) @ U) > z0 else -1.0
             if lift_sign < 0:
-                L._turn_about(tn, axis_, -4.0, base)
+                L._turn_about(tn, Fax, -4.0, base)
                 bpy.context.view_layer.update()
             lifted += 2.0
-            for _ in range(20):
+            for _ in range(30):
                 if min(float(x) for x in self._gaps(side, "thumb", None)) >= -0.3:
                     break
-                L._turn_about(tn, axis_, lift_sign * 2.0, base)
+                L._turn_about(tn, Fax, lift_sign * 2.0, base)
                 bpy.context.view_layer.update()
                 lifted += 2.0
         for b2 in np.arange(0.0, 90.0 + 1e-9, 5.0):
